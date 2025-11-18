@@ -114,10 +114,15 @@ export type CreatedKeywords<TKeywords extends CreateKeywordInput> = {
   };
 };
 
-export function createKeywordToken(keywordLiteral: string): TokenType {
+export function createKeywordToken(
+  keywordLiteral: string,
+  alias: string[] = [],
+): TokenType {
+  const pattern = [keywordLiteral, ...alias].join('\\|');
+
   return createToken({
     name: keywordLiteral,
-    pattern: keywordLiteral,
+    pattern,
   });
 }
 
