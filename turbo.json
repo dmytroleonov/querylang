@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "ui": "tui",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -8,7 +9,8 @@
     "test": {},
     "test:watch": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interactive": true
     },
     "//#lint": {},
     "//#lint:fix": {
