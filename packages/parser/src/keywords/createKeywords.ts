@@ -1,4 +1,4 @@
-import { createToken, type TokenType } from 'chevrotain';
+import { createToken, Lexer, type TokenType } from 'chevrotain';
 import { SearchQlError } from '@/errors/searchQlError.js';
 
 export const Colon = createToken({
@@ -30,6 +30,7 @@ export const False = createToken({
 export const WhiteSpace = createToken({
   name: 'WhiteSpace',
   pattern: /[ \t\n\r]+/,
+  group: Lexer.SKIPPED,
 });
 export const Not = createToken({
   name: 'Not',
@@ -118,7 +119,8 @@ export function createKeywordToken(
   keywordLiteral: string,
   alias: string[] = [],
 ): TokenType {
-  const pattern = [keywordLiteral, ...alias].join('\\|');
+  const patternString = [keywordLiteral, ...alias].join('\\|');
+  const pattern = new RegExp(patternString);
 
   return createToken({
     name: keywordLiteral,
@@ -146,6 +148,7 @@ export function createKeywords<TKeywords extends CreateKeywordInput>(
           `duplicate alias '${alias}' found both in '${existingKeywordLiteral}' and '${keywordLiteral}`,
         );
       }
+      aliasMap.set(alias, keywordLiteral);
     }
 
     for (const [alias, keywordLiteral] of aliasMap.entries()) {
@@ -156,7 +159,10 @@ export function createKeywords<TKeywords extends CreateKeywordInput>(
       }
     }
 
-    const tokenType = createKeywordToken(keywordLiteral);
+    const tokenType = createKeywordToken(
+      keywordLiteral,
+      keywords[keywordLiteral]?.alias,
+    );
     createdKeywords[keywordLiteral] = { config, tokenType };
   }
 
