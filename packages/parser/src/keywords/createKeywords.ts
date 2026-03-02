@@ -108,12 +108,12 @@ export function validateKeyword(keywordLiteral: string): void {
 }
 
 export type CreateKeywordInput = Record<string, AnyKeyword>;
-export type CreatedKeywords<TKeywords extends CreateKeywordInput> = {
+export type CreatedKeywords<TKeywords extends CreateKeywordInput> = Prettify<{
   [K in keyof TKeywords]: {
     config: TKeywords[K];
     tokenType: TokenType;
   };
-};
+}>;
 
 export function createKeywordToken(
   keywordLiteral: string,

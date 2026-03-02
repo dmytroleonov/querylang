@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SearchQlError } from '@/errors/searchQlError.js';
 import {
+  createKeywords,
   createKeywordToken,
   reservedKeywords,
   validateKeyword,
@@ -42,5 +43,54 @@ describe('createKeywordToken', () => {
     const tokenWithAlias = createKeywordToken('asdf', ['alias1', 'alias2']);
     expect(tokenWithAlias.name).toBe('asdf');
     expect(tokenWithAlias.PATTERN).toStrictEqual(/asdf\|alias1\|alias2/);
+  });
+});
+
+describe('createKeywords', () => {
+  it('rejects invalid keywords', () => {
+    expect(() => createKeywords({ '': { type: 'string' } })).toThrow(
+      SearchQlError,
+    );
+  });
+
+  it('rejects invalid alias', () => {
+    expect(() =>
+      createKeywords({ asdf: { type: 'string', alias: [''] } }),
+    ).toThrow(SearchQlError);
+  });
+
+  it('rejects alias that duplicates keyword', () => {
+    expect(() =>
+      createKeywords({ asdf: { type: 'string', alias: ['asdf'] } }),
+    ).toThrow(SearchQlError);
+  });
+
+  it('rejects duplicate alias', () => {
+    expect(() =>
+      createKeywords({
+        keyword1: { type: 'string', alias: ['alias1'] },
+        keyword2: { type: 'string', alias: ['alias1'] },
+      }),
+    ).toThrow(SearchQlError);
+  });
+
+  it('creates a token config for every keyword', () => {
+    const keywords = createKeywords({
+      keyword1: { type: 'string', alias: ['kw1'] },
+      keyword2: { type: 'string', alias: ['kw2'] },
+    });
+    expect(keywords.keyword1.config).toEqual({
+      type: 'string',
+      alias: ['kw1'],
+    });
+    expect(keywords.keyword1.tokenType.name).toBe('keyword1');
+    expect(keywords.keyword1.tokenType.PATTERN).toStrictEqual(/keyword1\|kw1/);
+
+    expect(keywords.keyword2.config).toEqual({
+      type: 'string',
+      alias: ['kw2'],
+    });
+    expect(keywords.keyword2.tokenType.name).toBe('keyword2');
+    expect(keywords.keyword2.tokenType.PATTERN).toStrictEqual(/keyword2\|kw2/);
   });
 });
