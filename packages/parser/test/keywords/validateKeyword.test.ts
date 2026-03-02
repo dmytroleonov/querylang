@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SearchQlError } from '@/errors/searchQlError.js';
 import {
+  createKeywordToken,
   reservedKeywords,
   validateKeyword,
 } from '@/keywords/createKeywords.js';
@@ -26,4 +27,20 @@ describe('validateKeyword', () => {
       expect(() => validateKeyword(validKeyword)).not.toThrow;
     },
   );
+});
+
+describe('createKeywordToken', () => {
+  it('creates a chevrotain token with a provided name and alias as pattern', () => {
+    const token = createKeywordToken('asdf');
+    expect(token.name).toBe('asdf');
+    expect(token.PATTERN).toStrictEqual(/asdf/);
+
+    const tokenWithEmptyAlias = createKeywordToken('asdf', []);
+    expect(tokenWithEmptyAlias.name).toBe('asdf');
+    expect(tokenWithEmptyAlias.PATTERN).toStrictEqual(/asdf/);
+
+    const tokenWithAlias = createKeywordToken('asdf', ['alias1', 'alias2']);
+    expect(tokenWithAlias.name).toBe('asdf');
+    expect(tokenWithAlias.PATTERN).toStrictEqual(/asdf\|alias1\|alias2/);
+  });
 });
