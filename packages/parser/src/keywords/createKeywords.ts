@@ -149,6 +149,7 @@ export function createKeywordToken(
 
 type ExtractAliases<T extends AnyKeyword> = Extract<keyof T['aliases'], string>;
 
+// TODO: it is probably better to add the "main" keyword to the definition.aliases
 export function createKeywordTokens<
   TName extends string,
   TDefinition extends AnyKeyword,
