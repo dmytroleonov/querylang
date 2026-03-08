@@ -40,27 +40,35 @@ describe('createKeywordToken', () => {
 });
 
 describe('createKeywordTokens', () => {
-  it('creates a chevrotain token without aliases', () => {
-    const tokens = createKeywordTokens('asdf');
-    expect(tokens).toHaveLength(1);
-    expect(tokens[0]?.name).toBe('asdf');
-    expect(tokens[0]?.PATTERN).toStrictEqual(/asdf/);
+  it('creates a single chevrotain token without aliases', () => {
+    const tokens = createKeywordTokens('asdf', { type: 'string' });
+    expect(Object.keys(tokens)).toHaveLength(1);
+    expect(tokens.asdf.definition).toEqual({
+      type: 'string',
+    });
+    expect(tokens.asdf.tokenType.name).toBe('asdf');
   });
 
-  it('creates a chevrotain token and aliases', () => {
-    const tokensWithAlias = createKeywordTokens('asdf', ['alias1', 'alias2']);
-    expect(tokensWithAlias).toHaveLength(3);
+  it('creates a chevrotain token and aliases with assigned categories', () => {
+    const tokens = createKeywordTokens('asdf', {
+      type: 'string',
+      aliases: {
+        alias1: true,
+        alias2: true,
+      },
+    });
+    expect(Object.keys(tokens)).toHaveLength(3);
 
-    const mainToken = tokensWithAlias[0];
-    expect(mainToken?.name).toBe('asdf');
+    const mainToken = tokens.asdf.tokenType;
+    expect(mainToken.name).toBe('asdf');
 
-    expect(tokensWithAlias[1]?.name).toBe('alias1');
-    expect(tokensWithAlias[1]?.CATEGORIES).toHaveLength(1);
-    expect(tokensWithAlias[1]?.CATEGORIES?.[0]).toBe(mainToken);
+    expect(tokens.alias1.tokenType.name).toBe('alias1');
+    expect(tokens.alias1.tokenType.CATEGORIES).toHaveLength(1);
+    expect(tokens.alias1.tokenType.CATEGORIES?.[0]).toBe(mainToken);
 
-    expect(tokensWithAlias[2]?.name).toBe('alias2');
-    expect(tokensWithAlias[2]?.CATEGORIES).toHaveLength(1);
-    expect(tokensWithAlias[2]?.CATEGORIES?.[0]).toBe(mainToken);
+    expect(tokens.alias2.tokenType.name).toBe('alias2');
+    expect(tokens.alias2.tokenType.CATEGORIES).toHaveLength(1);
+    expect(tokens.alias2.tokenType.CATEGORIES?.[0]).toBe(mainToken);
   });
 });
 
@@ -73,21 +81,21 @@ describe('createKeywords', () => {
 
   it('rejects invalid alias', () => {
     expect(() =>
-      createKeywords({ asdf: { type: 'string', alias: [''] } }),
+      createKeywords({ asdf: { type: 'string', aliases: { '': true } } }),
     ).toThrow(SearchQlError);
   });
 
   it('rejects alias that duplicates keyword', () => {
     expect(() =>
-      createKeywords({ asdf: { type: 'string', alias: ['asdf'] } }),
+      createKeywords({ asdf: { type: 'string', aliases: { asdf: true } } }),
     ).toThrow(SearchQlError);
   });
 
   it('rejects duplicate alias', () => {
     expect(() =>
       createKeywords({
-        keyword1: { type: 'string', alias: ['alias1'] },
-        keyword2: { type: 'string', alias: ['alias1'] },
+        keyword1: { type: 'string', aliases: { alias1: true } },
+        keyword2: { type: 'string', aliases: { alias1: true } },
       }),
     ).toThrow(SearchQlError);
   });
@@ -95,32 +103,45 @@ describe('createKeywords', () => {
   it('creates a token for every keyword and alias', () => {
     const keywords = createKeywords({
       keyword1: { type: 'string' },
-      keyword2: { type: 'string', alias: ['kw2'] },
-      keyword3: { type: 'string', alias: ['kw3', 'k3'] },
+      keyword2: { type: 'string', aliases: { kw2: true } },
+      keyword3: { type: 'string', aliases: { kw3: true, k3: true } },
     });
 
-    expect(keywords.keyword1).toHaveLength(1);
-    expect(keywords.keyword1[0]?.config).toEqual({
+    expect(Object.keys(keywords)).toHaveLength(6);
+    expect(keywords.keyword1.definition).toStrictEqual({
       type: 'string',
     });
-    expect(keywords.keyword1[0]?.tokenType.name).toBe('keyword1');
-    expect(keywords.keyword1[0]?.tokenType.PATTERN).toStrictEqual(/keyword1/);
+    expect(keywords.keyword1.tokenType.name).toBe('keyword1');
+    expect(keywords.keyword1.tokenType.PATTERN).toStrictEqual(/keyword1/);
 
-    expect(keywords.keyword2).toHaveLength(2);
-    expect(keywords.keyword2[0]?.config).toEqual({
+    expect(keywords.keyword2.definition).toStrictEqual({
       type: 'string',
-      alias: ['kw2'],
+      aliases: { kw2: true },
     });
-    expect(keywords.keyword2[0]?.tokenType.name).toBe('keyword2');
-    expect(keywords.keyword2[1]?.tokenType.name).toBe('kw2');
+    expect(keywords.keyword2.tokenType.name).toBe('keyword2');
 
-    expect(keywords.keyword3).toHaveLength(3);
-    expect(keywords.keyword3[0]?.config).toEqual({
+    expect(keywords.kw2.definition).toStrictEqual({
       type: 'string',
-      alias: ['kw3', 'k3'],
+      aliases: { kw2: true },
     });
-    expect(keywords.keyword3[0]?.tokenType.name).toBe('keyword3');
-    expect(keywords.keyword3[1]?.tokenType.name).toBe('kw3');
-    expect(keywords.keyword3[2]?.tokenType.name).toBe('k3');
+    expect(keywords.kw2.tokenType.name).toBe('kw2');
+
+    expect(keywords.keyword3.definition).toStrictEqual({
+      type: 'string',
+      aliases: { kw3: true, k3: true },
+    });
+    expect(keywords.keyword3.tokenType.name).toBe('keyword3');
+
+    expect(keywords.kw3.definition).toStrictEqual({
+      type: 'string',
+      aliases: { kw3: true, k3: true },
+    });
+    expect(keywords.kw3.tokenType.name).toBe('kw3');
+
+    expect(keywords.k3.definition).toStrictEqual({
+      type: 'string',
+      aliases: { kw3: true, k3: true },
+    });
+    expect(keywords.k3.tokenType.name).toBe('k3');
   });
 });

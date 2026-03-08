@@ -68,13 +68,14 @@ export const RParen = createToken({
 
 type Prettify<T> = { [K in keyof T]: T[K] } & unknown;
 export type DataType = 'string' | 'number' | 'boolean';
+export type Aliases = Record<string, true>;
 export type KeywordTypeFactory<
   TDataType extends DataType,
   TConfig extends Record<string, unknown> | undefined = undefined,
 > = Prettify<
   {
     type: TDataType;
-    alias?: string[];
+    aliases?: Aliases;
   } & (undefined extends TConfig ? { config?: TConfig } : { config: TConfig })
 >;
 export type StringKeywordConfig = undefined;
@@ -119,12 +120,16 @@ export function validateKeyword(keywordLiteral: string): void {
 
 export type CreateKeywordInput = Record<string, AnyKeyword>;
 export type CreatedKeyword<T extends AnyKeyword> = {
-  config: T;
+  definition: T;
   tokenType: TokenType;
 };
-export type CreatedKeywords<TKeywords extends CreateKeywordInput> = Prettify<{
-  [K in keyof TKeywords]: CreatedKeyword<TKeywords[K]>[];
-}>;
+export type CreatedKeywords<TKeywords extends CreateKeywordInput> = {
+  [K in keyof TKeywords]: CreatedKeyword<TKeywords[K]>;
+} & {
+  [K in keyof TKeywords as keyof TKeywords[K]['aliases']]: CreatedKeyword<
+    TKeywords[K]
+  >;
+};
 
 export type CreateKeywordTokenConfig = Omit<ITokenConfig, 'name' | 'pattern'>;
 
@@ -134,6 +139,7 @@ export function createKeywordToken(
 ): TokenType {
   const pattern = new RegExp(keywordLiteral);
 
+  // TODO: add to Keyword category
   return createToken({
     name: keywordLiteral,
     pattern,
@@ -141,16 +147,35 @@ export function createKeywordToken(
   });
 }
 
-export function createKeywordTokens(
-  keywordLiteral: string,
-  aliases: string[] = [],
-): TokenType[] {
-  const keywordToken = createKeywordToken(keywordLiteral);
-  const keywordAliases = aliases.map((a) =>
-    createKeywordToken(a, { categories: keywordToken }),
-  );
+type ExtractAliases<T extends AnyKeyword> = Extract<keyof T['aliases'], string>;
 
-  return [keywordToken, ...keywordAliases];
+export function createKeywordTokens<
+  TName extends string,
+  TDefinition extends AnyKeyword,
+>(
+  name: TName,
+  definition: TDefinition,
+): CreatedKeywords<Record<TName, TDefinition>> {
+  const keywords = {} as Record<string, CreatedKeyword<TDefinition>>;
+  const mainToken = createKeywordToken(name);
+  keywords[name] = {
+    definition,
+    tokenType: mainToken,
+  };
+
+  for (const alias of Object.keys(
+    definition.aliases ?? {},
+  ) as ExtractAliases<TDefinition>[]) {
+    const aliasToken = createKeywordToken(alias, { categories: mainToken });
+    keywords[alias] = {
+      definition,
+      tokenType: aliasToken,
+    };
+  }
+
+  return keywords as Record<TName, CreatedKeyword<TDefinition>> & {
+    [K in keyof TDefinition['aliases']]: TDefinition;
+  };
 }
 
 export function createKeywords<TKeywords extends CreateKeywordInput>(
@@ -165,7 +190,7 @@ export function createKeywords<TKeywords extends CreateKeywordInput>(
     validateKeyword(keywordLiteral);
     const config = keywords[keywordLiteral];
 
-    for (const alias of config?.alias ?? []) {
+    for (const alias in config?.aliases ?? {}) {
       validateKeyword(alias);
       if (aliasMap.has(alias)) {
         const existingKeywordLiteral = aliasMap.get(alias);
@@ -186,14 +211,14 @@ export function createKeywords<TKeywords extends CreateKeywordInput>(
 
     const tokens = createKeywordTokens(
       keywordLiteral,
-      keywords[keywordLiteral]?.alias,
+      keywords[keywordLiteral as keyof TKeywords],
     );
-    const createdTokens = tokens.map((token) => ({
-      config,
-      tokenType: token,
-    }));
 
-    createdKeywords[keywordLiteral] = createdTokens;
+    for (const token in tokens) {
+      createdKeywords[token as keyof CreatedKeywords<TKeywords>] = tokens[
+        token
+      ] as CreatedKeywords<TKeywords>[keyof CreatedKeywords<TKeywords>];
+    }
   }
 
   return createdKeywords;
