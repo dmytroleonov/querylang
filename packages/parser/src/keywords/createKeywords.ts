@@ -32,6 +32,11 @@ export const False = createToken({
   pattern: /false/,
   longer_alt: UnquotedString,
 });
+export const Null = createToken({
+  name: 'Null',
+  pattern: /null/,
+  longer_alt: UnquotedString,
+});
 export const Not = createToken({
   name: 'Not',
   pattern: /not/,
@@ -90,7 +95,7 @@ export type AnyKeyword =
   | NumberKeywordType
   | BooleanKeywordType;
 
-export const reservedKeywords = ['true', 'false', 'not', 'or', 'and'];
+export const reservedKeywords = ['true', 'false', 'not', 'or', 'and', 'null'];
 
 const keywordLiteralPattern = /^[_A-Za-z][_A-Za-z0-9]*$/;
 
