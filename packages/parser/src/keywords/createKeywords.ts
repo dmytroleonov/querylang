@@ -1,4 +1,9 @@
-import { createToken, Lexer, type TokenType } from 'chevrotain';
+import {
+  createToken,
+  type ITokenConfig,
+  Lexer,
+  type TokenType,
+} from 'chevrotain';
 import { SearchQlError } from '@/errors/searchQlError.js';
 
 export const WhiteSpace = createToken({
@@ -113,24 +118,39 @@ export function validateKeyword(keywordLiteral: string): void {
 }
 
 export type CreateKeywordInput = Record<string, AnyKeyword>;
+export type CreatedKeyword<T extends AnyKeyword> = {
+  config: T;
+  tokenType: TokenType;
+};
 export type CreatedKeywords<TKeywords extends CreateKeywordInput> = Prettify<{
-  [K in keyof TKeywords]: {
-    config: TKeywords[K];
-    tokenType: TokenType;
-  };
+  [K in keyof TKeywords]: CreatedKeyword<TKeywords[K]>[];
 }>;
+
+export type CreateKeywordTokenConfig = Omit<ITokenConfig, 'name' | 'pattern'>;
 
 export function createKeywordToken(
   keywordLiteral: string,
-  alias: string[] = [],
+  config: CreateKeywordTokenConfig = {},
 ): TokenType {
-  const patternString = [keywordLiteral, ...alias].join('\\|');
-  const pattern = new RegExp(patternString);
+  const pattern = new RegExp(keywordLiteral);
 
   return createToken({
     name: keywordLiteral,
     pattern,
+    ...config,
   });
+}
+
+export function createKeywordTokens(
+  keywordLiteral: string,
+  aliases: string[] = [],
+): TokenType[] {
+  const keywordToken = createKeywordToken(keywordLiteral);
+  const keywordAliases = aliases.map((a) =>
+    createKeywordToken(a, { categories: keywordToken }),
+  );
+
+  return [keywordToken, ...keywordAliases];
 }
 
 export function createKeywords<TKeywords extends CreateKeywordInput>(
@@ -164,11 +184,16 @@ export function createKeywords<TKeywords extends CreateKeywordInput>(
       }
     }
 
-    const tokenType = createKeywordToken(
+    const tokens = createKeywordTokens(
       keywordLiteral,
       keywords[keywordLiteral]?.alias,
     );
-    createdKeywords[keywordLiteral] = { config, tokenType };
+    const createdTokens = tokens.map((token) => ({
+      config,
+      tokenType: token,
+    }));
+
+    createdKeywords[keywordLiteral] = createdTokens;
   }
 
   return createdKeywords;

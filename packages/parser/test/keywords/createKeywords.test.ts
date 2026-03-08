@@ -3,6 +3,7 @@ import { SearchQlError } from '@/errors/searchQlError.js';
 import {
   createKeywords,
   createKeywordToken,
+  createKeywordTokens,
   reservedKeywords,
   validateKeyword,
 } from '@/keywords/createKeywords.js';
@@ -25,24 +26,41 @@ describe('validateKeyword', () => {
   it.each(['_', '___', 'qwe123', 'keyword', '_1_', 'truefalse', 'orand'])(
     "accepts valid keywords: validatekeyword('%s') -> void",
     (validKeyword) => {
-      expect(() => validateKeyword(validKeyword)).not.toThrow;
+      expect(() => validateKeyword(validKeyword)).not.toThrow();
     },
   );
 });
 
 describe('createKeywordToken', () => {
-  it('creates a chevrotain token with a provided name and alias as pattern', () => {
-    const token = createKeywordToken('asdf');
-    expect(token.name).toBe('asdf');
-    expect(token.PATTERN).toStrictEqual(/asdf/);
+  it('creates a token with the same pattern as name', () => {
+    const token = createKeywordToken('keyword');
+    expect(token.name).toBe('keyword');
+    expect(token.PATTERN).toStrictEqual(/keyword/);
+  });
+});
 
-    const tokenWithEmptyAlias = createKeywordToken('asdf', []);
-    expect(tokenWithEmptyAlias.name).toBe('asdf');
-    expect(tokenWithEmptyAlias.PATTERN).toStrictEqual(/asdf/);
+describe('createKeywordTokens', () => {
+  it('creates a chevrotain token without aliases', () => {
+    const tokens = createKeywordTokens('asdf');
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0]?.name).toBe('asdf');
+    expect(tokens[0]?.PATTERN).toStrictEqual(/asdf/);
+  });
 
-    const tokenWithAlias = createKeywordToken('asdf', ['alias1', 'alias2']);
-    expect(tokenWithAlias.name).toBe('asdf');
-    expect(tokenWithAlias.PATTERN).toStrictEqual(/asdf\|alias1\|alias2/);
+  it('creates a chevrotain token and aliases', () => {
+    const tokensWithAlias = createKeywordTokens('asdf', ['alias1', 'alias2']);
+    expect(tokensWithAlias).toHaveLength(3);
+
+    const mainToken = tokensWithAlias[0];
+    expect(mainToken?.name).toBe('asdf');
+
+    expect(tokensWithAlias[1]?.name).toBe('alias1');
+    expect(tokensWithAlias[1]?.CATEGORIES).toHaveLength(1);
+    expect(tokensWithAlias[1]?.CATEGORIES?.[0]).toBe(mainToken);
+
+    expect(tokensWithAlias[2]?.name).toBe('alias2');
+    expect(tokensWithAlias[2]?.CATEGORIES).toHaveLength(1);
+    expect(tokensWithAlias[2]?.CATEGORIES?.[0]).toBe(mainToken);
   });
 });
 
@@ -74,23 +92,35 @@ describe('createKeywords', () => {
     ).toThrow(SearchQlError);
   });
 
-  it('creates a token config for every keyword', () => {
+  it('creates a token for every keyword and alias', () => {
     const keywords = createKeywords({
-      keyword1: { type: 'string', alias: ['kw1'] },
+      keyword1: { type: 'string' },
       keyword2: { type: 'string', alias: ['kw2'] },
+      keyword3: { type: 'string', alias: ['kw3', 'k3'] },
     });
-    expect(keywords.keyword1.config).toEqual({
-      type: 'string',
-      alias: ['kw1'],
-    });
-    expect(keywords.keyword1.tokenType.name).toBe('keyword1');
-    expect(keywords.keyword1.tokenType.PATTERN).toStrictEqual(/keyword1\|kw1/);
 
-    expect(keywords.keyword2.config).toEqual({
+    expect(keywords.keyword1).toHaveLength(1);
+    expect(keywords.keyword1[0]?.config).toEqual({
+      type: 'string',
+    });
+    expect(keywords.keyword1[0]?.tokenType.name).toBe('keyword1');
+    expect(keywords.keyword1[0]?.tokenType.PATTERN).toStrictEqual(/keyword1/);
+
+    expect(keywords.keyword2).toHaveLength(2);
+    expect(keywords.keyword2[0]?.config).toEqual({
       type: 'string',
       alias: ['kw2'],
     });
-    expect(keywords.keyword2.tokenType.name).toBe('keyword2');
-    expect(keywords.keyword2.tokenType.PATTERN).toStrictEqual(/keyword2\|kw2/);
+    expect(keywords.keyword2[0]?.tokenType.name).toBe('keyword2');
+    expect(keywords.keyword2[1]?.tokenType.name).toBe('kw2');
+
+    expect(keywords.keyword3).toHaveLength(3);
+    expect(keywords.keyword3[0]?.config).toEqual({
+      type: 'string',
+      alias: ['kw3', 'k3'],
+    });
+    expect(keywords.keyword3[0]?.tokenType.name).toBe('keyword3');
+    expect(keywords.keyword3[1]?.tokenType.name).toBe('kw3');
+    expect(keywords.keyword3[2]?.tokenType.name).toBe('k3');
   });
 });
