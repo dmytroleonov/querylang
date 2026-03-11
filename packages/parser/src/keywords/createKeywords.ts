@@ -65,6 +65,10 @@ export const RParen = createToken({
   name: 'RParen',
   pattern: /\)/,
 });
+export const Keyword = createToken({
+  name: 'Keyword',
+  pattern: Lexer.NA,
+});
 
 type Prettify<T> = { [K in keyof T]: T[K] } & unknown;
 export type DataType = 'string' | 'number' | 'boolean';
@@ -135,15 +139,23 @@ export type CreateKeywordTokenConfig = Omit<ITokenConfig, 'name' | 'pattern'>;
 
 export function createKeywordToken(
   keywordLiteral: string,
-  config: CreateKeywordTokenConfig = {},
+  { categories: _categories, ...rest }: CreateKeywordTokenConfig = {},
 ): TokenType {
   const pattern = new RegExp(keywordLiteral);
+  const categories: TokenType[] = [Keyword];
+  if (_categories) {
+    if (Array.isArray(_categories)) {
+      categories.push(..._categories);
+    } else {
+      categories.push(_categories);
+    }
+  }
 
-  // TODO: add to Keyword category
   return createToken({
     name: keywordLiteral,
     pattern,
-    ...config,
+    categories,
+    ...rest,
   });
 }
 

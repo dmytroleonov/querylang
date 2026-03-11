@@ -4,6 +4,7 @@ import {
   createKeywords,
   createKeywordToken,
   createKeywordTokens,
+  Keyword,
   reservedKeywords,
   validateKeyword,
 } from '@/keywords/createKeywords.js';
@@ -61,14 +62,18 @@ describe('createKeywordTokens', () => {
 
     const mainToken = tokens.asdf.tokenType;
     expect(mainToken.name).toBe('asdf');
+    expect(mainToken.CATEGORIES).toHaveLength(1);
+    expect(mainToken.CATEGORIES).to.include(Keyword);
 
     expect(tokens.alias1.tokenType.name).toBe('alias1');
-    expect(tokens.alias1.tokenType.CATEGORIES).toHaveLength(1);
-    expect(tokens.alias1.tokenType.CATEGORIES?.[0]).toBe(mainToken);
+    expect(tokens.alias1.tokenType.CATEGORIES).toHaveLength(2);
+    expect(tokens.alias1.tokenType.CATEGORIES).to.include(mainToken);
+    expect(tokens.alias1.tokenType.CATEGORIES).to.include(Keyword);
 
     expect(tokens.alias2.tokenType.name).toBe('alias2');
-    expect(tokens.alias2.tokenType.CATEGORIES).toHaveLength(1);
-    expect(tokens.alias2.tokenType.CATEGORIES?.[0]).toBe(mainToken);
+    expect(tokens.alias2.tokenType.CATEGORIES).toHaveLength(2);
+    expect(tokens.alias2.tokenType.CATEGORIES).to.include(mainToken);
+    expect(tokens.alias2.tokenType.CATEGORIES).to.include(Keyword);
   });
 });
 
