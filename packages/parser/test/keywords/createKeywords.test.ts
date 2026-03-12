@@ -9,7 +9,7 @@ import {
   validateKeyword,
 } from '@/keywords/createKeywords.js';
 
-describe('validateKeyword', () => {
+describe(validateKeyword, () => {
   it.each(reservedKeywords)(
     "rejects reserved keyword: validateKeyword('%s') => SearchQlError",
     (reservedKeyword) => {
@@ -32,15 +32,13 @@ describe('validateKeyword', () => {
   );
 });
 
-describe('createKeywordToken', () => {
+describe(createKeywordToken, () => {
   it('creates a token with the same pattern as name', () => {
     const token = createKeywordToken('keyword');
     expect(token.name).toBe('keyword');
     expect(token.PATTERN).toStrictEqual(/keyword/);
   });
-});
 
-describe('createKeywordTokens', () => {
   it('creates a single chevrotain token without aliases', () => {
     const tokens = createKeywordTokens('asdf', { type: 'string' });
     expect(Object.keys(tokens)).toHaveLength(1);
@@ -77,7 +75,7 @@ describe('createKeywordTokens', () => {
   });
 });
 
-describe('createKeywords', () => {
+describe(createKeywords, () => {
   it('rejects invalid keywords', () => {
     expect(() => createKeywords({ '': { type: 'string' } })).toThrow(
       SearchQlError,
