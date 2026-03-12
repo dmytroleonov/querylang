@@ -44,7 +44,7 @@ describe('createKeywordTokens', () => {
   it('creates a single chevrotain token without aliases', () => {
     const tokens = createKeywordTokens('asdf', { type: 'string' });
     expect(Object.keys(tokens)).toHaveLength(1);
-    expect(tokens.asdf.definition).toEqual({
+    expect(tokens.asdf.config).toEqual({
       type: 'string',
     });
     expect(tokens.asdf.tokenType.name).toBe('asdf');
@@ -113,39 +113,34 @@ describe('createKeywords', () => {
     });
 
     expect(Object.keys(keywords)).toHaveLength(6);
-    expect(keywords.keyword1.definition).toStrictEqual({
+    expect(keywords.keyword1.config).toStrictEqual({
       type: 'string',
     });
     expect(keywords.keyword1.tokenType.name).toBe('keyword1');
     expect(keywords.keyword1.tokenType.PATTERN).toStrictEqual(/keyword1/);
 
-    expect(keywords.keyword2.definition).toStrictEqual({
+    expect(keywords.keyword2.config).toStrictEqual({
       type: 'string',
-      aliases: { kw2: true },
     });
     expect(keywords.keyword2.tokenType.name).toBe('keyword2');
 
-    expect(keywords.kw2.definition).toStrictEqual({
+    expect(keywords.kw2.config).toStrictEqual({
       type: 'string',
-      aliases: { kw2: true },
     });
     expect(keywords.kw2.tokenType.name).toBe('kw2');
 
-    expect(keywords.keyword3.definition).toStrictEqual({
+    expect(keywords.keyword3.config).toStrictEqual({
       type: 'string',
-      aliases: { kw3: true, k3: true },
     });
     expect(keywords.keyword3.tokenType.name).toBe('keyword3');
 
-    expect(keywords.kw3.definition).toStrictEqual({
+    expect(keywords.kw3.config).toStrictEqual({
       type: 'string',
-      aliases: { kw3: true, k3: true },
     });
     expect(keywords.kw3.tokenType.name).toBe('kw3');
 
-    expect(keywords.k3.definition).toStrictEqual({
+    expect(keywords.k3.config).toStrictEqual({
       type: 'string',
-      aliases: { kw3: true, k3: true },
     });
     expect(keywords.k3.tokenType.name).toBe('k3');
   });

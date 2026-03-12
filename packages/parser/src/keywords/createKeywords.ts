@@ -80,7 +80,9 @@ export type KeywordTypeFactory<
   {
     type: TDataType;
     aliases?: Aliases;
-  } & (undefined extends TConfig ? { config?: TConfig } : { config: TConfig })
+  } & (undefined extends TConfig
+    ? { validator?: TConfig }
+    : { validator: TConfig })
 >;
 export type StringKeywordConfig = undefined;
 export type StringKeywordType = KeywordTypeFactory<
@@ -122,9 +124,13 @@ export function validateKeyword(keywordLiteral: string): void {
   }
 }
 
+export type SimplifyConfig<T extends AnyKeyword> = Pick<
+  T,
+  'type' | 'validator'
+>;
 export type CreateKeywordInput = Record<string, AnyKeyword>;
 export type CreatedKeyword<T extends AnyKeyword> = {
-  definition: T;
+  config: SimplifyConfig<T>;
   tokenType: TokenType;
 };
 export type CreatedKeywords<TKeywords extends CreateKeywordInput> = {
@@ -161,33 +167,44 @@ export function createKeywordToken(
 
 type ExtractAliases<T extends AnyKeyword> = Extract<keyof T['aliases'], string>;
 
-// TODO: it is probably better to add the "main" keyword to the definition.aliases
+function simplifyConfig<TKeyword extends AnyKeyword>(
+  config: TKeyword,
+): SimplifyConfig<TKeyword> {
+  const simplifiedConfig: SimplifyConfig<TKeyword> = {
+    type: config.type,
+  };
+  if (Object.hasOwn(config, 'validator')) {
+    simplifiedConfig.validator = config.validator;
+  }
+
+  return simplifiedConfig;
+}
+
 export function createKeywordTokens<
   TName extends string,
-  TDefinition extends AnyKeyword,
->(
-  name: TName,
-  definition: TDefinition,
-): CreatedKeywords<Record<TName, TDefinition>> {
-  const keywords = {} as Record<string, CreatedKeyword<TDefinition>>;
+  TConfig extends AnyKeyword,
+>(name: TName, config: TConfig): CreatedKeywords<Record<TName, TConfig>> {
+  const keywords = {} as Record<string, CreatedKeyword<TConfig>>;
   const mainToken = createKeywordToken(name);
+  const simplifiedConfig = simplifyConfig(config);
+
   keywords[name] = {
-    definition,
+    config: simplifiedConfig,
     tokenType: mainToken,
   };
 
   for (const alias of Object.keys(
-    definition.aliases ?? {},
-  ) as ExtractAliases<TDefinition>[]) {
+    config.aliases ?? {},
+  ) as ExtractAliases<TConfig>[]) {
     const aliasToken = createKeywordToken(alias, { categories: mainToken });
     keywords[alias] = {
-      definition,
+      config: simplifiedConfig,
       tokenType: aliasToken,
     };
   }
 
-  return keywords as Record<TName, CreatedKeyword<TDefinition>> & {
-    [K in keyof TDefinition['aliases']]: TDefinition;
+  return keywords as Record<TName, CreatedKeyword<TConfig>> & {
+    [K in keyof TConfig['aliases']]: TConfig;
   };
 }
 
