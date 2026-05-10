@@ -14,7 +14,7 @@
   "devDependencies": {
     "@types/node": "25.6.2",
     "typescript": "6.0.3",
-    "vitest": "4.0.8"
+    "vitest": "4.1.5"
   },
   "dependencies": {
     "chevrotain": "11.0.3"
