@@ -17,6 +17,6 @@
     "vitest": "4.1.5"
   },
   "dependencies": {
-    "chevrotain": "11.0.3"
+    "chevrotain": "12.0.0"
   }
 }
