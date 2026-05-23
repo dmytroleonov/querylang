@@ -17,3 +17,5 @@ export type AnyKeyword =
   | StringKeywordType
   | NumberKeywordType
   | BooleanKeywordType;
+
+export type CreateKeywordInput = Record<string, AnyKeyword>;

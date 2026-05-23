@@ -1,8 +1,12 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
 import { SearchQlError } from '@/errors/searchQlError.js';
 import { Keyword } from '@/keywords/builtin.js';
+import type {
+  AnyKeyword,
+  CreateKeywordInput,
+  ValidatorFn,
+} from '@/keywords/types.js';
 import { getDefaultValidator } from '@/keywords/validators.js';
-import type { AnyKeyword, ValidatorFn } from './types.js';
 
 export const reservedKeywords = ['null'];
 
@@ -24,7 +28,6 @@ export function validateKeyword(keywordLiteral: string): void {
 export type NormalizeConfig<T extends AnyKeyword> = Pick<T, 'type'> & {
   validator: ValidatorFn;
 };
-export type CreateKeywordInput = Record<string, AnyKeyword>;
 export type CreatedKeyword<T extends AnyKeyword> = {
   config: NormalizeConfig<T>;
   tokenType: TokenType;
