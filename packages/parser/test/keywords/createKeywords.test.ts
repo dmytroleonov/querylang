@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { SearchQlError } from '@/errors/searchQlError.js';
+import { Keyword } from '@/keywords/builtin.js';
 import {
   createKeywords,
   createKeywordToken,
   createKeywordTokens,
-  Keyword,
   reservedKeywords,
   validateKeyword,
 } from '@/keywords/createKeywords.js';
