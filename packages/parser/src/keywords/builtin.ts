@@ -9,21 +9,31 @@ export const Colon = createToken({
   name: 'colon',
   pattern: /:/,
 });
-export const Value = createToken({
-  name: 'unquotedString',
-  pattern: /^(?!.*\.\.)(?:\\\\|\\[\s!&|():=~'"\\.]|[^\s!&|():=~'"\\])+/,
-});
-export const QuotedString = createToken({
-  name: 'quotedString',
-  pattern: /(['"])(?:\\.|(?!\1)[^\\])*\1/,
-});
+
 export const AnyValue = createToken({
-  name: 'string',
+  name: 'anyValue',
   pattern: Lexer.NA,
+});
+
+// matches any character escaped and doesnt' allow the following without escaping:
+// \s regex
+// !, &, |, (, ), :, =, ~, ', ", .
+// trailing .
+export const Value = createToken({
+  name: 'value',
+  pattern:
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: chevrotain workaround
+    /(?:\\.|[\u0000-\u0008\u000e-\u001f\u0023-\u0025\u002a-\u0039\u003b-\u003c\u003e-\u007b\u007d\u007f-\u009f\u00a1-\u167f\u1681-\u1fff\u200b-\u2027\u202a-\u202e\u2030-\u205e\u2026-\u2fff\u3001-\ufefe\uff00-\uffff])+(\\.|[\u0000-\u0008\u000e-\u001f\u0023-\u0025\u002a-\u002d\u002f-\u0039\u003b-\u003c\u003e-\u007b\u007d\u007f-\u009f\u00a1-\u167f\u1681-\u1fff\u200b-\u2027\u202a-\u202e\u2030-\u205e\u2026-\u2fff\u3001-\ufefe\uff00-\uffff])/,
+  categories: AnyValue,
+});
+export const QuotedValue = createToken({
+  name: 'quotedValue',
+  pattern: /(['"])(?:\\.|(?!\1)[^\\])*\1/,
+  categories: AnyValue,
 });
 export const Range = createToken({
   name: 'range',
-  pattern: /../,
+  pattern: /\.\./,
 });
 export const Null = createToken({
   name: 'null',
@@ -53,4 +63,12 @@ export const RParen = createToken({
 export const Keyword = createToken({
   name: 'keyword',
   pattern: Lexer.NA,
+});
+export const Eq = createToken({
+  name: 'eq',
+  pattern: /=/,
+});
+export const Tilde = createToken({
+  name: 'tilde',
+  pattern: /~/,
 });

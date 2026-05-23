@@ -1,6 +1,6 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
 import { SearchQlError } from '@/errors/searchQlError.js';
-import { Keyword } from '@/keywords/builtin.js';
+import { Keyword, Value } from '@/keywords/builtin.js';
 import type {
   AnyKeyword,
   CreateKeywordInput,
@@ -60,6 +60,7 @@ export function createKeywordToken(
     name: keywordLiteral,
     pattern,
     categories,
+    longer_alt: Value,
     ...rest,
   });
 }
@@ -106,6 +107,7 @@ export function createKeywordTokens<
   };
 }
 
+// todo: throw on empty keywords object
 export function createKeywords<TKeywords extends CreateKeywordInput>(
   keywords: TKeywords,
 ): CreatedKeywords<TKeywords> {
