@@ -1,52 +1,52 @@
 import { createToken, Lexer } from 'chevrotain';
 
-export const WhiteSpace = createToken({
-  name: 'WhiteSpace',
+export const Whitespace = createToken({
+  name: 'whitespace',
   pattern: /[ \t\n\r]+/,
   group: Lexer.SKIPPED,
 });
 export const Colon = createToken({
-  name: 'Colon',
+  name: 'colon',
   pattern: /:/,
 });
 export const UnquotedString = createToken({
-  name: 'UnquotedString',
+  name: 'unquotedString',
   pattern: /^(?!.*\.\.)(?:\\\\|\\[\s!&|():=~'"\\.]|[^\s!&|():=~'"\\])+/,
 });
 export const QuotedString = createToken({
-  name: 'QuotedString',
+  name: 'quotedString',
   pattern: /(['"])(?:\\.|(?!\1)[^\\])*\1/,
 });
 export const Range = createToken({
-  name: 'Range',
+  name: 'range',
   pattern: /../,
 });
 export const Null = createToken({
-  name: 'Null',
+  name: 'null',
   pattern: /null/,
   longer_alt: UnquotedString,
 });
 export const Not = createToken({
-  name: 'Not',
+  name: 'not',
   pattern: /!/,
 });
 export const Or = createToken({
-  name: 'Or',
+  name: 'or',
   pattern: /\|/,
 });
 export const And = createToken({
-  name: 'And',
+  name: 'and',
   pattern: /&/,
 });
 export const LParen = createToken({
-  name: 'LParen',
+  name: 'lParen',
   pattern: /\(/,
 });
 export const RParen = createToken({
-  name: 'RParen',
+  name: 'rParen',
   pattern: /\)/,
 });
 export const Keyword = createToken({
-  name: 'Keyword',
+  name: 'keyword',
   pattern: Lexer.NA,
 });
