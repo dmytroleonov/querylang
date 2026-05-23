@@ -11,11 +11,15 @@ export const Colon = createToken({
 });
 export const UnquotedString = createToken({
   name: 'UnquotedString',
-  pattern: /(?:\\\\|\\[\s!&|():=~'"\\]|[^\s!&|():=~'"\\])+/,
+  pattern: /^(?!.*\.\.)(?:\\\\|\\[\s!&|():=~'"\\.]|[^\s!&|():=~'"\\])+/,
 });
 export const QuotedString = createToken({
   name: 'QuotedString',
   pattern: /(['"])(?:\\.|(?!\1)[^\\])*\1/,
+});
+export const Range = createToken({
+  name: 'Range',
+  pattern: /../,
 });
 export const Null = createToken({
   name: 'Null',
