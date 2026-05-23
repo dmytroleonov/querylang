@@ -29,17 +29,14 @@ export const Null = createToken({
 export const Not = createToken({
   name: 'Not',
   pattern: /!/,
-  longer_alt: UnquotedString,
 });
 export const Or = createToken({
   name: 'Or',
   pattern: /\|/,
-  longer_alt: UnquotedString,
 });
 export const And = createToken({
   name: 'And',
   pattern: /&/,
-  longer_alt: UnquotedString,
 });
 export const LParen = createToken({
   name: 'LParen',
