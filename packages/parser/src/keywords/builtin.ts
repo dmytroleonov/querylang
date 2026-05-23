@@ -9,13 +9,17 @@ export const Colon = createToken({
   name: 'colon',
   pattern: /:/,
 });
-export const UnquotedString = createToken({
+export const Value = createToken({
   name: 'unquotedString',
   pattern: /^(?!.*\.\.)(?:\\\\|\\[\s!&|():=~'"\\.]|[^\s!&|():=~'"\\])+/,
 });
 export const QuotedString = createToken({
   name: 'quotedString',
   pattern: /(['"])(?:\\.|(?!\1)[^\\])*\1/,
+});
+export const AnyValue = createToken({
+  name: 'string',
+  pattern: Lexer.NA,
 });
 export const Range = createToken({
   name: 'range',
@@ -24,7 +28,7 @@ export const Range = createToken({
 export const Null = createToken({
   name: 'null',
   pattern: /null/,
-  longer_alt: UnquotedString,
+  longer_alt: Value,
 });
 export const Not = createToken({
   name: 'not',
