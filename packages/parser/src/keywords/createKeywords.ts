@@ -1,45 +1,10 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
 import { SearchQlError } from '@/errors/searchQlError.js';
 import { Keyword } from '@/keywords/builtin.js';
+import { getDefaultValidator } from '@/keywords/validators.js';
+import type { AnyKeyword, ValidatorFn } from './types.js';
 
-type Prettify<T> = { [K in keyof T]: T[K] } & unknown;
-export type DataType = 'string' | 'number' | 'boolean';
-export type Aliases = Record<string, true>;
-export type KeywordTypeFactory<
-  TDataType extends DataType,
-  TConfig extends Record<string, unknown> | undefined = undefined,
-> = Prettify<
-  {
-    type: TDataType;
-    aliases?: Aliases;
-  } & (undefined extends TConfig
-    ? { validator?: TConfig }
-    : { validator: TConfig })
->;
-export type StringKeywordConfig = undefined;
-export type StringKeywordType = KeywordTypeFactory<
-  'string',
-  StringKeywordConfig
->;
-export type NumberKeywordConfig = {
-  min?: number;
-  max?: number;
-};
-export type NumberKeywordType = KeywordTypeFactory<
-  'number',
-  NumberKeywordConfig | undefined
->;
-export type BooleanKeywordConfig = undefined;
-export type BooleanKeywordType = KeywordTypeFactory<
-  'boolean',
-  BooleanKeywordConfig
->;
-export type AnyKeyword =
-  | StringKeywordType
-  | NumberKeywordType
-  | BooleanKeywordType;
-
-export const reservedKeywords = ['true', 'false', 'not', 'or', 'and', 'null'];
+export const reservedKeywords = ['null'];
 
 const keywordLiteralPattern = /^[_A-Za-z][_A-Za-z0-9]*$/;
 
@@ -56,13 +21,12 @@ export function validateKeyword(keywordLiteral: string): void {
   }
 }
 
-export type SimplifyConfig<T extends AnyKeyword> = Pick<
-  T,
-  'type' | 'validator'
->;
+export type NormalizeConfig<T extends AnyKeyword> = Pick<T, 'type'> & {
+  validator: ValidatorFn;
+};
 export type CreateKeywordInput = Record<string, AnyKeyword>;
 export type CreatedKeyword<T extends AnyKeyword> = {
-  config: SimplifyConfig<T>;
+  config: NormalizeConfig<T>;
   tokenType: TokenType;
 };
 export type CreatedKeywords<TKeywords extends CreateKeywordInput> = {
@@ -99,17 +63,16 @@ export function createKeywordToken(
 
 type ExtractAliases<T extends AnyKeyword> = Extract<keyof T['aliases'], string>;
 
-function simplifyConfig<TKeyword extends AnyKeyword>(
+function normalizeConfig<TKeyword extends AnyKeyword>(
   config: TKeyword,
-): SimplifyConfig<TKeyword> {
-  const simplifiedConfig: SimplifyConfig<TKeyword> = {
+): NormalizeConfig<TKeyword> {
+  const defaultValidator = getDefaultValidator(config.type);
+  const normalizedConfig: NormalizeConfig<TKeyword> = {
     type: config.type,
+    validator: config.validator ?? defaultValidator,
   };
-  if (Object.hasOwn(config, 'validator')) {
-    simplifiedConfig.validator = config.validator;
-  }
 
-  return simplifiedConfig;
+  return normalizedConfig;
 }
 
 export function createKeywordTokens<
@@ -118,10 +81,10 @@ export function createKeywordTokens<
 >(name: TName, config: TConfig): CreatedKeywords<Record<TName, TConfig>> {
   const keywords = {} as Record<string, CreatedKeyword<TConfig>>;
   const mainToken = createKeywordToken(name);
-  const simplifiedConfig = simplifyConfig(config);
+  const normalizedConfig = normalizeConfig(config);
 
   keywords[name] = {
-    config: simplifiedConfig,
+    config: normalizedConfig,
     tokenType: mainToken,
   };
 
@@ -130,7 +93,7 @@ export function createKeywordTokens<
   ) as ExtractAliases<TConfig>[]) {
     const aliasToken = createKeywordToken(alias, { categories: mainToken });
     keywords[alias] = {
-      config: simplifiedConfig,
+      config: normalizedConfig,
       tokenType: aliasToken,
     };
   }
