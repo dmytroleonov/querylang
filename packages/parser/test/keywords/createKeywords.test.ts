@@ -5,9 +5,11 @@ import {
   createKeywords,
   createKeywordToken,
   createKeywordTokens,
+  normalizeConfig,
   reservedKeywords,
   validateKeyword,
 } from '@/keywords/createKeywords.js';
+import type { ValidatorFn } from '@/keywords/types.js';
 
 describe(validateKeyword, () => {
   it.each(
@@ -135,5 +137,27 @@ describe(createKeywords, () => {
 
     expect(keywords.k3.config.type).toBe('string');
     expect(keywords.k3.tokenType.name).toBe('k3');
+  });
+});
+
+describe(normalizeConfig, () => {
+  it('creates a normalized config with a provided type and validator', () => {
+    const validator: ValidatorFn = () => true;
+    const normalized = normalizeConfig({
+      type: 'string',
+      aliases: { a: true },
+      validator,
+    });
+    expect(normalized).toStrictEqual({ type: 'string', validator });
+  });
+
+  it('creates a normalized config with a default validaitor', () => {
+    const normalized = normalizeConfig({
+      type: 'string',
+      aliases: { a: true },
+    });
+    expect(Object.keys(normalized)).toHaveLength(2);
+    expect(normalized.type).toBe('string');
+    expect(normalized.validator).toBeTypeOf('function');
   });
 });

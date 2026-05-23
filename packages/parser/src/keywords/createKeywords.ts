@@ -66,7 +66,7 @@ export function createKeywordToken(
 
 type ExtractAliases<T extends AnyKeyword> = Extract<keyof T['aliases'], string>;
 
-function normalizeConfig<TKeyword extends AnyKeyword>(
+export function normalizeConfig<TKeyword extends AnyKeyword>(
   config: TKeyword,
 ): NormalizeConfig<TKeyword> {
   const defaultValidator = getDefaultValidator(config.type);
