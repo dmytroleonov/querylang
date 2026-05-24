@@ -59,26 +59,24 @@ describe(createLexer, () => {
     const keywords = createKeywords({ kw: { type: 'string' } });
     const lexer = createLexer(keywords);
     const res = lexer.lex(
-      `!kw:(val1 & val2 | =val3 | ~val4 | null | 123.123\\")`,
+      `!kw:(& | = ~ null 123.123 val1 >= <= > <)`,
     );
     expect(res.tokens).toMatchObject([
       { tokenType: { name: 'not' }, image: '!' },
       { tokenType: { name: 'kw' }, image: 'kw' },
       { tokenType: { name: 'colon' }, image: ':' },
       { tokenType: { name: 'lParen' }, image: '(' },
-      { tokenType: { name: 'value' }, image: 'val1' },
       { tokenType: { name: 'and' }, image: '&' },
-      { tokenType: { name: 'value' }, image: 'val2' },
       { tokenType: { name: 'or' }, image: '|' },
       { tokenType: { name: 'eq' }, image: '=' },
-      { tokenType: { name: 'value' }, image: 'val3' },
-      { tokenType: { name: 'or' }, image: '|' },
       { tokenType: { name: 'tilde' }, image: '~' },
-      { tokenType: { name: 'value' }, image: 'val4' },
-      { tokenType: { name: 'or' }, image: '|' },
       { tokenType: { name: 'null' }, image: 'null' },
-      { tokenType: { name: 'or' }, image: '|' },
-      { tokenType: { name: 'value' }, image: '123.123\\"' },
+      { tokenType: { name: 'value' }, image: '123.123' },
+      { tokenType: { name: 'value' }, image: 'val1' },
+      { tokenType: { name: 'gte' }, image: '>=' },
+      { tokenType: { name: 'lte' }, image: '<=' },
+      { tokenType: { name: 'gt' }, image: '>' },
+      { tokenType: { name: 'lt' }, image: '<' },
       { tokenType: { name: 'rParen' }, image: ')' },
     ]);
   });

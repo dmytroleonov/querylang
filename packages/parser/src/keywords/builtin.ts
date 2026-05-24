@@ -72,3 +72,19 @@ export const Tilde = createToken({
   name: 'tilde',
   pattern: /~/,
 });
+export const Gte = createToken({
+  name: 'gte',
+  pattern: />=/,
+});
+export const Gt = createToken({
+  name: 'gt',
+  pattern: />/,
+});
+export const Lte = createToken({
+  name: 'lte',
+  pattern: /<=/,
+});
+export const Lt = createToken({
+  name: 'lt',
+  pattern: /</,
+});
