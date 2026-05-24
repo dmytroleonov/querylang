@@ -21,7 +21,10 @@ import {
   Value,
   Whitespace,
 } from '@/keywords/builtin.js';
-import type { CreatedKeywords } from '@/keywords/createKeywords.js';
+import {
+  type CreatedKeywords,
+  createKeywords,
+} from '@/keywords/createKeywords.js';
 import type { CreateKeywordInput } from '@/keywords/types.js';
 
 export type CustomLexer = {
@@ -52,36 +55,48 @@ export function insertBuiltinTokens(tokens: TokenType[]): void {
   }
 }
 
-export function createLexer<TKeywords extends CreateKeywordInput>(
-  keywords: CreatedKeywords<TKeywords>,
-): CustomLexer {
-  const userDefinedTokens = Object.values(keywords).map((k) => k.tokenType);
-  const sortedTokens = sortTokens(userDefinedTokens);
-  insertBuiltinTokens(sortedTokens);
-  const allTokens: TokenType[] = [
-    Whitespace,
-    Colon,
-    Not,
-    Or,
-    And,
-    LParen,
-    RParen,
-    Range,
-    Gte,
-    Gt,
-    Lte,
-    Lt,
-    Eq,
-    Tilde,
-    ...sortedTokens,
-    NumberValue,
-    Value,
-    QuotedValue,
-    AnyValue,
-    Keyword,
-  ];
+export type Language<TKeywords extends CreateKeywordInput> = {
+  keywords: CreatedKeywords<TKeywords>;
+  tokens: TokenType[];
+};
 
-  const chevrotainLexer = new Lexer(allTokens, {
+export function createLanguage<TKeywords extends CreateKeywordInput>(
+  keywords: TKeywords,
+): Language<TKeywords> {
+  const createdKeywords = createKeywords(keywords);
+  const keywordTokens = Object.values(createdKeywords).map((k) => k.tokenType);
+  const sortedTokens = sortTokens(keywordTokens);
+  insertBuiltinTokens(sortedTokens);
+
+  return {
+    keywords: createdKeywords,
+    tokens: [
+      Whitespace,
+      Colon,
+      Not,
+      Or,
+      And,
+      LParen,
+      RParen,
+      Range,
+      Gte,
+      Gt,
+      Lte,
+      Lt,
+      Eq,
+      Tilde,
+      ...sortedTokens,
+      NumberValue,
+      Value,
+      QuotedValue,
+      AnyValue,
+      Keyword,
+    ],
+  };
+}
+
+export function createLexer(tokens: TokenType[]): CustomLexer {
+  const chevrotainLexer = new Lexer(tokens, {
     recoveryEnabled: false,
     deferDefinitionErrorsHandling: false,
     ensureOptimizations: true,

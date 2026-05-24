@@ -1,7 +1,12 @@
 import { createToken, type TokenType } from 'chevrotain';
 import { describe, expect, it } from 'vitest';
 import { createKeywords } from '@/keywords/createKeywords.js';
-import { createLexer, insertBuiltinTokens, sortTokens } from '@/lexer/lexer.js';
+import {
+  createLanguage,
+  createLexer,
+  insertBuiltinTokens,
+  sortTokens,
+} from '@/lexer/lexer.js';
 
 describe(sortTokens, () => {
   it('should sort tokens in a reverse alphabetical order', () => {
@@ -49,15 +54,28 @@ describe(insertBuiltinTokens, () => {
   });
 });
 
+describe(createLanguage, () => {
+  it('should create and return keywords and tokens', () => {
+    const language = createLanguage({
+      kw: { type: 'string', aliases: { keyword: true } },
+    });
+    expect(language.keywords).toMatchObject({
+      kw: { config: { type: 'string' } },
+      keyword: { config: { type: 'string' } },
+    });
+    expect(language.tokens).toHaveLength(22);
+  });
+});
+
 describe(createLexer, () => {
   it('should not throw with correct input', () => {
-    const keywords = createKeywords({ kw: { type: 'string' } });
-    expect(() => createLexer(keywords)).not.toThrow();
+    const language = createLanguage({ kw: { type: 'string' } });
+    expect(() => createLexer(language.tokens)).not.toThrow();
   });
 
   it('should lex built-in tokens', () => {
-    const keywords = createKeywords({ kw: { type: 'string' } });
-    const lexer = createLexer(keywords);
+    const language = createLanguage({ kw: { type: 'string' } });
+    const lexer = createLexer(language.tokens);
     const res = lexer.lex(`!kw:(& | = ~ null 123.123 val1 >= <= > < a..b)`);
     expect(res.errors).toHaveLength(0);
     expect(res.tokens).toMatchObject([
