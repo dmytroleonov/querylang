@@ -18,6 +18,7 @@ export const AnyValue = createToken({
 export const NumberValue = createToken({
   name: 'number',
   pattern: /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/,
+  categories: AnyValue,
 });
 
 // matches any character escaped and doesnt' allow the following without escaping:
