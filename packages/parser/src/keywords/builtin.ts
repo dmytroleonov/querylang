@@ -44,6 +44,7 @@ export const Null = createToken({
   name: 'null',
   pattern: /null/,
   longer_alt: Value,
+  categories: AnyValue,
 });
 export const Not = createToken({
   name: 'not',
