@@ -3,7 +3,6 @@ import { createToken, Lexer } from 'chevrotain';
 export const Whitespace = createToken({
   name: 'whitespace',
   pattern: /[ \t\n\r]+/,
-  group: Lexer.SKIPPED,
 });
 export const Colon = createToken({
   name: 'colon',
