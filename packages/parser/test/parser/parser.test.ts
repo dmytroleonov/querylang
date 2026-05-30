@@ -7,7 +7,9 @@ describe(createParser, () => {
     const language = createLanguage({ kw: { type: 'string' } });
     const lexer = createLexer(language.tokens);
     const parser = createParser(language);
-    const { tokens } = lexer.lex('asdf & (kw:!(!asdf & asdf kw:2)) & asdf');
+    const { tokens } = lexer.lex(
+      '(asdf | kw:1 | kw:null) & (kw:!(!asdf & asdf)) & asdf',
+    );
     const res = parser.parse(tokens);
     expect(res.errors).toHaveLength(0);
   });

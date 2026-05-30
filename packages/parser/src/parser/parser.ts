@@ -33,6 +33,10 @@ export type CustomParser = {
   parse: (input: IToken[]) => ParserResult;
 };
 
+type Config = {
+  allowKeywords?: boolean;
+};
+
 export function createParser<TKeywords extends CreateKeywordInput>(
   language: Language<TKeywords>,
 ): CustomParser {
@@ -43,32 +47,40 @@ export function createParser<TKeywords extends CreateKeywordInput>(
       this.performSelfAnalysis();
     }
 
-    public expression = this.RULE('expression', () => {
-      this.SUBRULE(this.orExpression);
-    });
+    public expression = this.RULE(
+      'expression',
+      ({ allowKeywords = true }: Config = {}) => {
+        this.SUBRULE(this.orExpression, { ARGS: [{ allowKeywords }] });
+      },
+    );
 
-    private orExpression = this.RULE('orExpression', () => {
-      this.SUBRULE(this.andExpression);
+    private orExpression = this.RULE('orExpression', (config?: Config) => {
+      this.SUBRULE(this.andExpression, { ARGS: [config] });
       this.MANY(() => {
         this.CONSUME(Or);
-        this.SUBRULE2(this.andExpression);
+        this.SUBRULE2(this.andExpression, { ARGS: [config] });
       });
     });
 
-    private andExpression = this.RULE('andExpression', () => {
-      this.SUBRULE(this.keywordOrAtomicExpression);
+    private andExpression = this.RULE('andExpression', (config?: Config) => {
+      this.SUBRULE(this.keywordOrAtomicExpression, { ARGS: [config] });
       this.MANY(() => {
         this.OPTION({ DEF: () => this.CONSUME(And) });
-        this.SUBRULE2(this.keywordOrAtomicExpression);
+        this.SUBRULE2(this.keywordOrAtomicExpression, { ARGS: [config] });
       });
     });
 
     private keywordOrAtomicExpression = this.RULE(
       'keywordOrAtomicExpression',
-      () => {
+      (config?: Config) => {
         this.OR([
-          { ALT: () => this.SUBRULE(this.keywordExpression) },
-          { ALT: () => this.SUBRULE(this.atomicExpression) },
+          {
+            GATE: () => !!config?.allowKeywords,
+            ALT: () => this.SUBRULE(this.keywordExpression),
+          },
+          {
+            ALT: () => this.SUBRULE(this.atomicExpression, { ARGS: [config] }),
+          },
         ]);
       },
     );
@@ -79,45 +91,53 @@ export function createParser<TKeywords extends CreateKeywordInput>(
       });
       this.CONSUME(Keyword);
       this.CONSUME(Colon);
-      this.SUBRULE(this.atomicExpression);
+      this.SUBRULE(this.atomicExpression, { ARGS: [{ allowKeywords: false }] });
     });
 
-    private atomicExpression = this.RULE('atomicExpression', () => {
-      this.OPTION({
-        DEF: () => this.CONSUME(Not),
-      });
-      this.OR([
-        { ALT: () => this.SUBRULE(this.parenthesisExpression) },
-        {
-          ALT: () => {
-            this.OPTION1({
-              DEF: () => {
-                this.OR1([
-                  { ALT: () => this.CONSUME(Gte) },
-                  { ALT: () => this.CONSUME(Gt) },
-                  { ALT: () => this.CONSUME(Lte) },
-                  { ALT: () => this.CONSUME(Lt) },
-                  { ALT: () => this.CONSUME(Eq) },
-                  { ALT: () => this.CONSUME(Tilde) },
-                ]);
-              },
-            });
-            this.CONSUME(AnyValue);
+    private atomicExpression = this.RULE(
+      'atomicExpression',
+      (config?: Config) => {
+        this.OPTION({
+          DEF: () => this.CONSUME(Not),
+        });
+        this.OR([
+          {
+            ALT: () =>
+              this.SUBRULE(this.parenthesisExpression, {
+                ARGS: [config],
+              }),
           },
-        },
-        {
-          GATE: () =>
-            this.LA(1).tokenType === Range || this.LA(2).tokenType === Range,
-          ALT: () => this.SUBRULE(this.rangeExpression),
-        },
-      ]);
-    });
+          {
+            ALT: () => {
+              this.OPTION1({
+                DEF: () => {
+                  this.OR1([
+                    { ALT: () => this.CONSUME(Gte) },
+                    { ALT: () => this.CONSUME(Gt) },
+                    { ALT: () => this.CONSUME(Lte) },
+                    { ALT: () => this.CONSUME(Lt) },
+                    { ALT: () => this.CONSUME(Eq) },
+                    { ALT: () => this.CONSUME(Tilde) },
+                  ]);
+                },
+              });
+              this.CONSUME(AnyValue);
+            },
+          },
+          {
+            GATE: () =>
+              this.LA(1).tokenType === Range || this.LA(2).tokenType === Range,
+            ALT: () => this.SUBRULE(this.rangeExpression),
+          },
+        ]);
+      },
+    );
 
     private parenthesisExpression = this.RULE(
       'parenthesisValueExpression',
-      () => {
+      (config?: Config) => {
         this.CONSUME(LParen);
-        this.SUBRULE(this.expression);
+        this.SUBRULE(this.expression, { ARGS: [config] });
         this.CONSUME(RParen);
       },
     );
