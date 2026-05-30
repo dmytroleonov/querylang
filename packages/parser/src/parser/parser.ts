@@ -1,8 +1,10 @@
 import {
   type CstNode,
   CstParser,
+  EOF,
   type IRecognitionException,
   type IToken,
+  tokenMatcher,
 } from 'chevrotain';
 import {
   And,
@@ -20,6 +22,7 @@ import {
   Range,
   RParen,
   Tilde,
+  Whitespace,
 } from '@/keywords/builtin.js';
 import type { CreateKeywordInput } from '@/keywords/types.js';
 import type { Language } from '@/lexer/lexer.js';
@@ -47,6 +50,12 @@ export function createParser<TKeywords extends CreateKeywordInput>(
       this.performSelfAnalysis();
     }
 
+    private optionalWhitespace = this.RULE('optionalWhitespace', () => {
+      this.OPTION(() => {
+        this.CONSUME(Whitespace);
+      });
+    });
+
     public expression = this.RULE(
       'expression',
       ({ allowKeywords = true }: Config = {}) => {
@@ -58,6 +67,7 @@ export function createParser<TKeywords extends CreateKeywordInput>(
       this.SUBRULE(this.andExpression, { ARGS: [config] });
       this.MANY(() => {
         this.CONSUME(Or);
+        this.SUBRULE(this.optionalWhitespace);
         this.SUBRULE2(this.andExpression, { ARGS: [config] });
       });
     });
@@ -66,6 +76,7 @@ export function createParser<TKeywords extends CreateKeywordInput>(
       this.SUBRULE(this.keywordOrAtomicExpression, { ARGS: [config] });
       this.MANY(() => {
         this.OPTION({ DEF: () => this.CONSUME(And) });
+        this.SUBRULE(this.optionalWhitespace);
         this.SUBRULE2(this.keywordOrAtomicExpression, { ARGS: [config] });
       });
     });
@@ -73,6 +84,7 @@ export function createParser<TKeywords extends CreateKeywordInput>(
     private keywordOrAtomicExpression = this.RULE(
       'keywordOrAtomicExpression',
       (config?: Config) => {
+        this.SUBRULE(this.optionalWhitespace);
         this.OR([
           {
             GATE: () => !!config?.allowKeywords,
@@ -130,8 +142,24 @@ export function createParser<TKeywords extends CreateKeywordInput>(
             },
           },
         ]);
+        this.OR2([
+          {
+            GATE: () => this.isWhitespaceRequired(),
+            ALT: () => this.CONSUME(Whitespace),
+          },
+          {
+            GATE: () => !this.isWhitespaceRequired(),
+            ALT: () => this.SUBRULE1(this.optionalWhitespace),
+          },
+        ]);
       },
     );
+
+    private isWhitespaceRequired(): boolean {
+      const wsNotRequiredBefore = [EOF, LParen, RParen, And, Or];
+      const nextToken = this.LA(1);
+      return !wsNotRequiredBefore.some((t) => tokenMatcher(nextToken, t));
+    }
 
     private parenthesisExpression = this.RULE(
       'parenthesisExpression',

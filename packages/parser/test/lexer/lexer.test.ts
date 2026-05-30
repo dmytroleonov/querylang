@@ -75,7 +75,9 @@ describe(createLexer, () => {
   it('should lex built-in tokens', () => {
     const language = createLanguage({ kw: { type: 'string' } });
     const lexer = createLexer(language.tokens);
-    const res = lexer.lex(`!kw:(& | = ~ null 123.123 val1 >= <= > < \n\t\ra..b)`);
+    const res = lexer.lex(
+      `!kw:(& | = ~ null 123.123 val1 >= <= > < \n\t\ra..b)`,
+    );
     expect(res.errors).toHaveLength(0);
     expect(res.tokens).toMatchObject([
       { tokenType: { name: 'not' }, image: '!' },
