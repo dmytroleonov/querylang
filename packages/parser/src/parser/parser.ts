@@ -108,6 +108,11 @@ export function createParser<TKeywords extends CreateKeywordInput>(
               }),
           },
           {
+            GATE: () =>
+              this.LA(1).tokenType === Range || this.LA(2).tokenType === Range,
+            ALT: () => this.SUBRULE(this.rangeExpression),
+          },
+          {
             ALT: () => {
               this.OPTION1({
                 DEF: () => {
@@ -123,11 +128,6 @@ export function createParser<TKeywords extends CreateKeywordInput>(
               });
               this.CONSUME(AnyValue);
             },
-          },
-          {
-            GATE: () =>
-              this.LA(1).tokenType === Range || this.LA(2).tokenType === Range,
-            ALT: () => this.SUBRULE(this.rangeExpression),
           },
         ]);
       },
