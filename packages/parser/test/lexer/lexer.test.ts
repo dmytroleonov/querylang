@@ -1,6 +1,5 @@
 import { createToken, type TokenType } from 'chevrotain';
 import { describe, expect, it } from 'vitest';
-import { createKeywords } from '@/keywords/createKeywords.js';
 import {
   createLanguage,
   createLexer,
