@@ -134,7 +134,7 @@ export function createParser<TKeywords extends CreateKeywordInput>(
     );
 
     private parenthesisExpression = this.RULE(
-      'parenthesisValueExpression',
+      'parenthesisExpression',
       (config?: Config) => {
         this.CONSUME(LParen);
         this.SUBRULE(this.expression, { ARGS: [config] });
