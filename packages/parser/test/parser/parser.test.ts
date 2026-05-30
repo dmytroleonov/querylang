@@ -8,7 +8,7 @@ describe(createParser, () => {
     const lexer = createLexer(language.tokens);
     const parser = createParser(language);
     const { tokens } = lexer.lex(
-      '(asdf1.. ..asdf2 ..asdf3 | kw:1 | kw:null) & (kw:!(!asdf & asdf)) & asdf',
+      ' (asdf1..& ..123 &asdf..asdf2 & ..asdf3 |kw:1| kw:null) & ( kw:!( !asdf & asdf ) ) & asdf ',
     );
     const res = parser.parse(tokens);
     expect(res.errors).toHaveLength(0);

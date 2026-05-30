@@ -75,7 +75,9 @@ describe(createLexer, () => {
   it('should lex built-in tokens', () => {
     const language = createLanguage({ kw: { type: 'string' } });
     const lexer = createLexer(language.tokens);
-    const res = lexer.lex(`!kw:(& | = ~ null 123.123 val1 >= <= > < a..b)`);
+    const res = lexer.lex(
+      `!kw:(& | = ~ null 123.123 val1 >= <= > < \n\t\ra..b)`,
+    );
     expect(res.errors).toHaveLength(0);
     expect(res.tokens).toMatchObject([
       { tokenType: { name: 'not' }, image: '!' },
@@ -83,16 +85,27 @@ describe(createLexer, () => {
       { tokenType: { name: 'colon' }, image: ':' },
       { tokenType: { name: 'lParen' }, image: '(' },
       { tokenType: { name: 'and' }, image: '&' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'or' }, image: '|' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'eq' }, image: '=' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'tilde' }, image: '~' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'null' }, image: 'null' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'number' }, image: '123.123' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'value' }, image: 'val1' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'gte' }, image: '>=' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'lte' }, image: '<=' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'gt' }, image: '>' },
+      { tokenType: { name: 'whitespace' }, image: ' ' },
       { tokenType: { name: 'lt' }, image: '<' },
+      { tokenType: { name: 'whitespace' }, image: ' \n\t\r' },
       { tokenType: { name: 'value' }, image: 'a' },
       { tokenType: { name: 'range' }, image: '..' },
       { tokenType: { name: 'value' }, image: 'b' },
