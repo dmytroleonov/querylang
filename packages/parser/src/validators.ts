@@ -1,4 +1,4 @@
-import { QueryLangError } from '@/erorrs.js';
+import { QueryLangError } from '@/erorr.js';
 import type { DataType, ValidatorFn } from '@/types.js';
 
 type StringValidatorConfig = {
