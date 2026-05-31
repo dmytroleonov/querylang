@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package",
-  "name": "@searchql/parser",
+  "name": "@querylang/core",
   "version": "0.0.0",
   "license": "MIT",
   "private": false,
