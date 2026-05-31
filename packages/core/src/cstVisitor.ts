@@ -1,5 +1,5 @@
 import type { CstNode } from 'chevrotain';
-import type { QueryLangParser } from '@/parser.js';
+import type { QlParser } from '@/parser.js';
 import type { Ast, TKeywordConfig } from '@/types.js';
 
 export type QueryLangCstVisitor<TConfig extends TKeywordConfig> = {
@@ -7,9 +7,9 @@ export type QueryLangCstVisitor<TConfig extends TKeywordConfig> = {
 };
 
 export function createCstVisitor<TConfig extends TKeywordConfig>(
-  parser: QueryLangParser,
+  parser: QlParser,
 ): QueryLangCstVisitor<TConfig> {
-  class CstVisitor extends parser.getBaseCstVisitorConstructor<
+  class QlCstVisitor extends parser.getBaseCstVisitorConstructor<
     never,
     Ast<TConfig>
   >() {
@@ -18,7 +18,7 @@ export function createCstVisitor<TConfig extends TKeywordConfig>(
       this.validateVisitor();
     }
   }
-  const cstVisitor = new CstVisitor();
+  const cstVisitor = new QlCstVisitor();
 
   return {
     visit: (node: CstNode): Ast<TConfig> => {

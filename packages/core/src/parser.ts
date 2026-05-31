@@ -33,15 +33,15 @@ export type ParserResult = {
   errors: IRecognitionException[];
 };
 
-export type CustomParser = {
+export type QueryLangParser = {
   parse: (input: IToken[]) => ParserResult;
 };
 
-type Config = {
+type ParsingStepConfig = {
   allowKeywords?: boolean;
 };
 
-export class QueryLangParser extends CstParser {
+export class QlParser extends CstParser {
   constructor(tokens: TokenType[]) {
     super(tokens);
     this.performSelfAnalysis();
@@ -55,32 +55,38 @@ export class QueryLangParser extends CstParser {
 
   public expression = this.RULE(
     'expression',
-    ({ allowKeywords = true }: Config = {}) => {
+    ({ allowKeywords = true }: ParsingStepConfig = {}) => {
       this.SUBRULE(this.orExpression, { ARGS: [{ allowKeywords }] });
     },
   );
 
-  private orExpression = this.RULE('orExpression', (config?: Config) => {
-    this.SUBRULE(this.andExpression, { ARGS: [config] });
-    this.MANY(() => {
-      this.CONSUME(Or);
-      this.SUBRULE(this.optionalWhitespace);
-      this.SUBRULE2(this.andExpression, { ARGS: [config] });
-    });
-  });
+  private orExpression = this.RULE(
+    'orExpression',
+    (config?: ParsingStepConfig) => {
+      this.SUBRULE(this.andExpression, { ARGS: [config] });
+      this.MANY(() => {
+        this.CONSUME(Or);
+        this.SUBRULE(this.optionalWhitespace);
+        this.SUBRULE2(this.andExpression, { ARGS: [config] });
+      });
+    },
+  );
 
-  private andExpression = this.RULE('andExpression', (config?: Config) => {
-    this.SUBRULE(this.keywordOrAtomicExpression, { ARGS: [config] });
-    this.MANY(() => {
-      this.OPTION({ DEF: () => this.CONSUME(And) });
-      this.SUBRULE(this.optionalWhitespace);
-      this.SUBRULE2(this.keywordOrAtomicExpression, { ARGS: [config] });
-    });
-  });
+  private andExpression = this.RULE(
+    'andExpression',
+    (config?: ParsingStepConfig) => {
+      this.SUBRULE(this.keywordOrAtomicExpression, { ARGS: [config] });
+      this.MANY(() => {
+        this.OPTION({ DEF: () => this.CONSUME(And) });
+        this.SUBRULE(this.optionalWhitespace);
+        this.SUBRULE2(this.keywordOrAtomicExpression, { ARGS: [config] });
+      });
+    },
+  );
 
   private keywordOrAtomicExpression = this.RULE(
     'keywordOrAtomicExpression',
-    (config?: Config) => {
+    (config?: ParsingStepConfig) => {
       this.SUBRULE(this.optionalWhitespace);
       this.OR([
         {
@@ -105,7 +111,7 @@ export class QueryLangParser extends CstParser {
 
   private atomicExpression = this.RULE(
     'atomicExpression',
-    (config?: Config) => {
+    (config?: ParsingStepConfig) => {
       this.OPTION({
         DEF: () => this.CONSUME(Not),
       });
@@ -160,7 +166,7 @@ export class QueryLangParser extends CstParser {
 
   private parenthesisExpression = this.RULE(
     'parenthesisExpression',
-    (config?: Config) => {
+    (config?: ParsingStepConfig) => {
       this.CONSUME(LParen);
       this.SUBRULE(this.expression, { ARGS: [config] });
       this.CONSUME(RParen);
@@ -194,9 +200,9 @@ export class QueryLangParser extends CstParser {
 
 export function createParser<TKeywords extends CreateKeywordInput>(
   language: Language<TKeywords>,
-): CustomParser {
+): QueryLangParser {
   const { tokens } = language;
-  const parser = new QueryLangParser(tokens);
+  const parser = new QlParser(tokens);
 
   return {
     parse: (input) => {
