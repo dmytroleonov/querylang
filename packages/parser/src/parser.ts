@@ -25,7 +25,7 @@ import {
   Whitespace,
 } from '@/keywords/builtin.js';
 import type { CreateKeywordInput } from '@/keywords/types.js';
-import type { Language } from '@/lexer/lexer.js';
+import type { Language } from '@/lexer.js';
 
 export type ParserResult = {
   node: CstNode;

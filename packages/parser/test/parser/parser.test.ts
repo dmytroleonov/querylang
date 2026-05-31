@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createLanguage, createLexer } from '@/lexer/lexer.js';
+import { createLanguage, createLexer } from '@/lexer.js';
 import { createParser } from '@/parser.js';
 
 describe(createParser, () => {
