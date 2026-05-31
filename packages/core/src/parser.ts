@@ -2,6 +2,7 @@ import {
   type CstNode,
   CstParser,
   EOF,
+  type ILexingError,
   type IRecognitionException,
   type IToken,
   type TokenType,
@@ -25,24 +26,28 @@ import {
   Tilde,
   Whitespace,
 } from '@/builtin.js';
-import type { Language } from '@/lexer.js';
-import type { CreateKeywordInput } from '@/types.js';
+import {
+  createChevrotainCstVisitor,
+  type QueryLangCstVisitorError,
+} from '@/cstVisitor.js';
+import { createChevrotainLexer, createLanguage } from '@/lexer.js';
+import type { Ast, CreateKeywordInput, InferKeywordConfig } from '@/types.js';
 
-export type ParserResult = {
+export type ChevrotainParserResult = {
   node: CstNode;
   errors: IRecognitionException[];
 };
 
-export type QueryLangParser = {
-  instance: QlParser;
-  parse: (input: IToken[]) => ParserResult;
+export type ChevrotainParser = {
+  instance: InternalQlParser;
+  parse: (input: IToken[]) => ChevrotainParserResult;
 };
 
 type ParsingStepConfig = {
   allowKeywords?: boolean;
 };
 
-export class QlParser extends CstParser {
+export class InternalQlParser extends CstParser {
   constructor(tokens: TokenType[]) {
     super(tokens);
     this.performSelfAnalysis();
@@ -199,17 +204,88 @@ export class QlParser extends CstParser {
   });
 }
 
-export function createChevrotainParser<TKeywords extends CreateKeywordInput>(
-  language: Language<TKeywords>,
-): QueryLangParser {
-  const { tokens } = language;
-  const parser = new QlParser(tokens);
+export function createChevrotainParser(tokens: TokenType[]): ChevrotainParser {
+  const parser = new InternalQlParser(tokens);
 
   return {
     instance: parser,
     parse: (input) => {
       parser.input = input;
       return { node: parser.expression(), errors: parser.errors };
+    },
+  };
+}
+
+export type ParserResult<TKeywords extends CreateKeywordInput> = {
+  ast: Ast<InferKeywordConfig<TKeywords>>;
+  errors: {
+    lexer: ILexingError[];
+    parser: IRecognitionException[];
+    visitor: QueryLangCstVisitorError[];
+  };
+};
+
+export type QlParser<TKeywords extends CreateKeywordInput> = {
+  parse: (input: string) => ParserResult<TKeywords>;
+};
+
+export function createQlParser<TKeywords extends CreateKeywordInput>(
+  keywords: TKeywords,
+): QlParser<TKeywords> {
+  const language = createLanguage(keywords);
+  const lexer = createChevrotainLexer(language.tokens);
+  const parser = createChevrotainParser(language.tokens);
+  const cstVisitor = createChevrotainCstVisitor(
+    language.keywords,
+    parser.instance,
+  );
+
+  return {
+    parse: (input: string): ParserResult<TKeywords> => {
+      const { tokens, errors: lexerErrors } = lexer.tokenize(input);
+      if (lexerErrors.length) {
+        return {
+          ast: { type: 'EMPTY' },
+          errors: {
+            lexer: lexerErrors,
+            parser: [],
+            visitor: [],
+          },
+        };
+      }
+
+      const { node, errors: parserErrors } = parser.parse(tokens);
+      if (parserErrors.length) {
+        return {
+          ast: { type: 'EMPTY' },
+          errors: {
+            lexer: [],
+            parser: parserErrors,
+            visitor: [],
+          },
+        };
+      }
+
+      const { errors: cstVisitorErrors, ast } = cstVisitor.visit(node);
+      if (cstVisitorErrors.length) {
+        return {
+          ast: { type: 'EMPTY' },
+          errors: {
+            lexer: [],
+            parser: [],
+            visitor: cstVisitorErrors,
+          },
+        };
+      }
+
+      return {
+        ast,
+        errors: {
+          lexer: [],
+          parser: [],
+          visitor: [],
+        },
+      };
     },
   };
 }

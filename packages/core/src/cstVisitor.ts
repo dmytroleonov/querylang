@@ -1,28 +1,48 @@
 import type { CstNode } from 'chevrotain';
-import type { QlParser } from '@/parser.js';
-import type { Ast, TKeywordConfig } from '@/types.js';
+import type { InternalQlParser } from '@/parser.js';
+import type { Ast, CreateKeywordInput, InferKeywordConfig } from '@/types.js';
+import type { CreatedKeywords } from './createKeywords.js';
 
-export type QueryLangCstVisitor<TConfig extends TKeywordConfig> = {
-  visit: (node: CstNode) => Ast<TConfig>;
+export type QueryLangCstVisitorResult<TKeywords extends CreateKeywordInput> = {
+  errors: QueryLangCstVisitorError[];
+  ast: Ast<InferKeywordConfig<TKeywords>>;
 };
 
-export function createCstVisitor<TConfig extends TKeywordConfig>(
-  parser: QlParser,
-): QueryLangCstVisitor<TConfig> {
+export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
+  visit: (node: CstNode) => QueryLangCstVisitorResult<TKeywords>;
+};
+
+export type QueryLangCstVisitorError = {
+  message: string;
+};
+
+export function createChevrotainCstVisitor<
+  TKeywords extends CreateKeywordInput,
+>(
+  keywords: CreatedKeywords<TKeywords>,
+  parser: InternalQlParser,
+): QueryLangCstVisitor<TKeywords> {
   class QlCstVisitor extends parser.getBaseCstVisitorConstructor<
     never,
-    Ast<TConfig>
+    Ast<InferKeywordConfig<TKeywords>>
   >() {
+    public errors: QueryLangCstVisitorError[] = [];
+
     constructor() {
       super();
       this.validateVisitor();
     }
   }
+
   const cstVisitor = new QlCstVisitor();
 
   return {
-    visit: (node: CstNode): Ast<TConfig> => {
-      return cstVisitor.visit(node);
+    visit: (node) => {
+      const ast = cstVisitor.visit(node);
+      return {
+        ast,
+        errors: cstVisitor.errors,
+      };
     },
   };
 }

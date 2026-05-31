@@ -1,8 +1,8 @@
 import { createToken, type TokenType } from 'chevrotain';
 import { describe, expect, it } from 'vitest';
 import {
-  createLanguage,
   createChevrotainLexer,
+  createLanguage,
   insertBuiltinTokens,
   sortTokens,
 } from '@/lexer.js';
@@ -75,7 +75,7 @@ describe(createChevrotainLexer, () => {
   it('should lex built-in tokens', () => {
     const language = createLanguage({ kw: { type: 'string' } });
     const lexer = createChevrotainLexer(language.tokens);
-    const res = lexer.lex(
+    const res = lexer.tokenize(
       `!kw:(& | = ~ null 123.123 val1 >= <= > < \n\t\ra..b)`,
     );
     expect(res.errors).toHaveLength(0);

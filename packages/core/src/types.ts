@@ -20,8 +20,18 @@ export type AnyKeyword =
 
 export type CreateKeywordInput = Record<string, AnyKeyword>;
 
+export type InferKeywordConfig<TKeywords extends CreateKeywordInput> = {
+  [K in keyof TKeywords]: TKeywords[K]['type'] extends BooleanKeywordType['type']
+    ? boolean
+    : TKeywords[K]['type'] extends StringKeywordType['type']
+      ? string
+      : TKeywords[K]['type'] extends NumberKeywordType['type']
+        ? number
+        : never;
+};
+
 export type LRangeOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'L_RANGE';
@@ -29,7 +39,7 @@ export type LRangeOp<
 };
 
 export type RRangeOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'R_RANGE';
@@ -37,7 +47,7 @@ export type RRangeOp<
 };
 
 export type FullRangeOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'FULL_RANGE';
@@ -46,7 +56,7 @@ export type FullRangeOp<
 };
 
 export type EqOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'EQ';
@@ -54,7 +64,7 @@ export type EqOp<
 };
 
 export type LtOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'LT';
@@ -62,7 +72,7 @@ export type LtOp<
 };
 
 export type LteOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'LTE';
@@ -70,7 +80,7 @@ export type LteOp<
 };
 
 export type GtOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'GT';
@@ -78,7 +88,7 @@ export type GtOp<
 };
 
 export type GteOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'GTE';
@@ -86,7 +96,7 @@ export type GteOp<
 };
 
 export type ILikeOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'ILIKE';
@@ -94,7 +104,7 @@ export type ILikeOp<
 };
 
 export type LikeOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   op: 'LIKE';
@@ -102,7 +112,7 @@ export type LikeOp<
 };
 
 export type StringOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > =
   | ILikeOp<TConfig, TKeyword>
@@ -110,7 +120,7 @@ export type StringOp<
   | EqOp<TConfig, TKeyword>;
 
 export type NumberOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > =
   | LRangeOp<TConfig, TKeyword>
@@ -123,12 +133,12 @@ export type NumberOp<
   | GteOp<TConfig, TKeyword>;
 
 export type BooleanOp<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = EqOp<TConfig, TKeyword>;
 
 export type Op<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = TConfig[TKeyword] extends string
   ? StringOp<TConfig, TKeyword>
@@ -139,14 +149,14 @@ export type Op<
       : never;
 
 export type KeywordExpression<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   type: 'KEYWORD';
 } & { [K in TKeyword]: { keyword: K; value: Op<TConfig, K> } }[TKeyword];
 
 export type AndExpression<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   type: 'AND';
@@ -154,17 +164,17 @@ export type AndExpression<
 };
 
 export type OrExpression<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   type: 'OR';
   children: Expression<TConfig, TKeyword>[];
 };
 
-export type TKeywordConfig = Record<string, number | string | boolean>;
+export type KeywordTypes = Record<string, number | string | boolean>;
 
 export type Expression<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig = keyof TConfig,
 > =
   | OrExpression<TConfig, TKeyword>
@@ -174,6 +184,6 @@ export type Expression<
 export type Empty = { type: 'EMPTY' };
 
 export type Ast<
-  TConfig extends TKeywordConfig,
+  TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig = keyof TConfig,
 > = Expression<TConfig, TKeyword> | Empty;

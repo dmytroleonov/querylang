@@ -103,7 +103,7 @@ export function createKeywordTokens<
   };
 }
 
-// todo: throw on empty keywords object
+// todo: throw on empty keywords object or when no string keywords are provided
 export function createKeywords<TKeywords extends CreateKeywordInput>(
   keywords: TKeywords,
 ): CreatedKeywords<TKeywords> {
