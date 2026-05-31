@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { QueryLangError } from '@/erorrs.js';
-import { Keyword } from '@/keywords/builtin.js';
+import { Keyword } from '@/builtin.js';
 import {
   createKeywords,
   createKeywordToken,

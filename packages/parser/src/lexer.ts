@@ -20,7 +20,7 @@ import {
   Tilde,
   Value,
   Whitespace,
-} from '@/keywords/builtin.js';
+} from '@/builtin.js';
 import {
   type CreatedKeywords,
   createKeywords,

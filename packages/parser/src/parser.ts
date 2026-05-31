@@ -23,7 +23,7 @@ import {
   RParen,
   Tilde,
   Whitespace,
-} from '@/keywords/builtin.js';
+} from '@/builtin.js';
 import type { CreateKeywordInput } from '@/keywords/types.js';
 import type { Language } from '@/lexer.js';
 
