@@ -24,7 +24,7 @@ import {
 import {
   type CreatedKeywords,
   createKeywords,
-} from '@/keywords/createKeywords.js';
+} from '@/createKeywords.js';
 import type { CreateKeywordInput } from '@/keywords/types.js';
 
 export type CustomLexer = {

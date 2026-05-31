@@ -8,7 +8,7 @@ import {
   normalizeConfig,
   reservedKeywords,
   validateKeyword,
-} from '@/keywords/createKeywords.js';
+} from '@/createKeywords.js';
 import type { ValidatorFn } from '@/keywords/types.js';
 
 describe(validateKeyword, () => {
