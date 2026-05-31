@@ -23,9 +23,9 @@ import {
   RParen,
   Tilde,
   Whitespace,
-} from '@/keywords/builtin.js';
-import type { CreateKeywordInput } from '@/keywords/types.js';
-import type { Language } from '@/lexer/lexer.js';
+} from '@/builtin.js';
+import type { Language } from '@/lexer.js';
+import type { CreateKeywordInput } from '@/types.js';
 
 export type ParserResult = {
   node: CstNode;

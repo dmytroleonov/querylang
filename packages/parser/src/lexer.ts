@@ -20,12 +20,9 @@ import {
   Tilde,
   Value,
   Whitespace,
-} from '@/keywords/builtin.js';
-import {
-  type CreatedKeywords,
-  createKeywords,
-} from '@/keywords/createKeywords.js';
-import type { CreateKeywordInput } from '@/keywords/types.js';
+} from '@/builtin.js';
+import { type CreatedKeywords, createKeywords } from '@/createKeywords.js';
+import type { CreateKeywordInput } from '@/types.js';
 
 export type CustomLexer = {
   lex: (input: string) => ILexingResult;

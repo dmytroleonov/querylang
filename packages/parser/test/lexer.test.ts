@@ -5,7 +5,7 @@ import {
   createLexer,
   insertBuiltinTokens,
   sortTokens,
-} from '@/lexer/lexer.js';
+} from '@/lexer.js';
 
 describe(sortTokens, () => {
   it('should sort tokens in a reverse alphabetical order', () => {
