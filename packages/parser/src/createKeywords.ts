@@ -1,11 +1,7 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
-import { QueryLangError } from '@/erorr.js';
 import { Keyword, Value } from '@/builtin.js';
-import type {
-  AnyKeyword,
-  CreateKeywordInput,
-  ValidatorFn,
-} from '@/types.js';
+import { QueryLangError } from '@/erorr.js';
+import type { AnyKeyword, CreateKeywordInput, ValidatorFn } from '@/types.js';
 import { getDefaultValidator } from '@/validators.js';
 
 export const reservedKeywords = ['null'];

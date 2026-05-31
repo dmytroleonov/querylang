@@ -24,8 +24,8 @@ import {
   Tilde,
   Whitespace,
 } from '@/builtin.js';
-import type { CreateKeywordInput } from '@/types.js';
 import type { Language } from '@/lexer.js';
+import type { CreateKeywordInput } from '@/types.js';
 
 export type ParserResult = {
   node: CstNode;

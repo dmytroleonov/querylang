@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { QueryLangError } from '@/erorr.js';
 import { Keyword } from '@/builtin.js';
 import {
   createKeywords,
@@ -9,6 +8,7 @@ import {
   reservedKeywords,
   validateKeyword,
 } from '@/createKeywords.js';
+import { QueryLangError } from '@/erorr.js';
 import type { ValidatorFn } from '@/types.js';
 
 describe(validateKeyword, () => {

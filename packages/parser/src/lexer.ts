@@ -21,10 +21,7 @@ import {
   Value,
   Whitespace,
 } from '@/builtin.js';
-import {
-  type CreatedKeywords,
-  createKeywords,
-} from '@/createKeywords.js';
+import { type CreatedKeywords, createKeywords } from '@/createKeywords.js';
 import type { CreateKeywordInput } from '@/types.js';
 
 export type CustomLexer = {
