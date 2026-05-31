@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SearchQlError } from '@/errors/searchQlError.js';
+import { SearchQlError } from '@/errors/erorrs.js';
 import { Keyword } from '@/keywords/builtin.js';
 import {
   createKeywords,

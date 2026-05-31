@@ -1,4 +1,4 @@
-import { SearchQlError } from '@/errors/searchQlError.js';
+import { SearchQlError } from '@/errors/erorrs.js';
 import type { DataType, ValidatorFn } from '@/keywords/types.js';
 
 type StringValidatorConfig = {

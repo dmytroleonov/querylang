@@ -1,5 +1,5 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
-import { SearchQlError } from '@/errors/searchQlError.js';
+import { SearchQlError } from '@/errors/erorrs.js';
 import { Keyword, Value } from '@/keywords/builtin.js';
 import type {
   AnyKeyword,
