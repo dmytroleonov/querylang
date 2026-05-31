@@ -6,7 +6,7 @@ import type {
   CreateKeywordInput,
   ValidatorFn,
 } from '@/types.js';
-import { getDefaultValidator } from '@/keywords/validators.js';
+import { getDefaultValidator } from '@/validators.js';
 
 export const reservedKeywords = ['null'];
 
