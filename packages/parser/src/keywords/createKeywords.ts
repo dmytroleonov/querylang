@@ -1,5 +1,5 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
-import { SearchQlError } from '@/errors/erorrs.js';
+import { QueryLangError } from '@/erorrs.js';
 import { Keyword, Value } from '@/keywords/builtin.js';
 import type {
   AnyKeyword,
@@ -14,12 +14,12 @@ const keywordLiteralPattern = /^[_A-Za-z][_A-Za-z0-9]*$/;
 
 export function validateKeyword(keywordLiteral: string): void {
   if (reservedKeywords.includes(keywordLiteral)) {
-    throw new SearchQlError(
+    throw new QueryLangError(
       `'${keywordLiteral}' is a reserved keyword and cannot be used as an identifier`,
     );
   }
   if (!keywordLiteralPattern.test(keywordLiteral)) {
-    throw new SearchQlError(
+    throw new QueryLangError(
       `'${keywordLiteral}' is not a valid keyword. Keyword litrals should match the following pattern: '${keywordLiteralPattern}'`,
     );
   }
@@ -124,7 +124,7 @@ export function createKeywords<TKeywords extends CreateKeywordInput>(
       validateKeyword(alias);
       if (aliasMap.has(alias)) {
         const existingKeywordLiteral = aliasMap.get(alias);
-        throw new SearchQlError(
+        throw new QueryLangError(
           `duplicate alias '${alias}' found both in '${existingKeywordLiteral}' and '${keywordLiteral}`,
         );
       }
@@ -133,7 +133,7 @@ export function createKeywords<TKeywords extends CreateKeywordInput>(
 
     for (const [alias, keywordLiteral] of aliasMap.entries()) {
       if (keywordSet.has(alias)) {
-        throw new SearchQlError(
+        throw new QueryLangError(
           `alias '${alias}' of keyword '${keywordLiteral}' duplicates keyword '${alias}'`,
         );
       }

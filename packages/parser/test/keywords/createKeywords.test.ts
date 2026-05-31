@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SearchQlError } from '@/errors/erorrs.js';
+import { QueryLangError } from '@/erorrs.js';
 import { Keyword } from '@/keywords/builtin.js';
 import {
   createKeywords,
@@ -15,7 +15,7 @@ describe(validateKeyword, () => {
   it.each(
     reservedKeywords,
   )("rejects reserved keyword: validateKeyword('%s') => SearchQlError", (reservedKeyword) => {
-    expect(() => validateKeyword(reservedKeyword)).toThrow(SearchQlError);
+    expect(() => validateKeyword(reservedKeyword)).toThrow(QueryLangError);
   });
 
   it.each([
@@ -25,7 +25,7 @@ describe(validateKeyword, () => {
     '\n',
     'with a space',
   ])("rejects keywords that do not match keyword pattern: validateKeyword('%s') => SearchQlError", (invalidKeyword) => {
-    expect(() => validateKeyword(invalidKeyword)).toThrow(SearchQlError);
+    expect(() => validateKeyword(invalidKeyword)).toThrow(QueryLangError);
   });
 
   it.each([
@@ -86,20 +86,20 @@ describe(createKeywordToken, () => {
 describe(createKeywords, () => {
   it('rejects invalid keywords', () => {
     expect(() => createKeywords({ '': { type: 'string' } })).toThrow(
-      SearchQlError,
+      QueryLangError,
     );
   });
 
   it('rejects invalid alias', () => {
     expect(() =>
       createKeywords({ asdf: { type: 'string', aliases: { '': true } } }),
-    ).toThrow(SearchQlError);
+    ).toThrow(QueryLangError);
   });
 
   it('rejects alias that duplicates keyword', () => {
     expect(() =>
       createKeywords({ asdf: { type: 'string', aliases: { asdf: true } } }),
-    ).toThrow(SearchQlError);
+    ).toThrow(QueryLangError);
   });
 
   it('rejects duplicate alias', () => {
@@ -108,7 +108,7 @@ describe(createKeywords, () => {
         keyword1: { type: 'string', aliases: { alias1: true } },
         keyword2: { type: 'string', aliases: { alias1: true } },
       }),
-    ).toThrow(SearchQlError);
+    ).toThrow(QueryLangError);
   });
 
   it('creates a token for every keyword and alias', () => {

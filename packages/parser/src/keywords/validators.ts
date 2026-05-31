@@ -1,4 +1,4 @@
-import { SearchQlError } from '@/errors/erorrs.js';
+import { QueryLangError } from '@/erorrs.js';
 import type { DataType, ValidatorFn } from '@/keywords/types.js';
 
 type StringValidatorConfig = {
@@ -72,7 +72,7 @@ export function getDefaultValidator(type: DataType): ValidatorFn {
     case 'boolean':
       return booleanValidator();
     default: {
-      throw new SearchQlError(`Unknown data type: "${type satisfies never}"`);
+      throw new QueryLangError(`Unknown data type: "${type satisfies never}"`);
     }
   }
 }
