@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createLanguage, createLexer } from '@/lexer/lexer.js';
-import { createParser } from '@/parser/parser.js';
+import { createParser } from '@/parser.js';
 
 describe(createParser, () => {
   it('should not throw with correct input', () => {
