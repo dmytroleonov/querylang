@@ -34,6 +34,7 @@ export type ParserResult = {
 };
 
 export type QueryLangParser = {
+  instance: QlParser;
   parse: (input: IToken[]) => ParserResult;
 };
 
@@ -198,13 +199,14 @@ export class QlParser extends CstParser {
   });
 }
 
-export function createParser<TKeywords extends CreateKeywordInput>(
+export function createParserInstance<TKeywords extends CreateKeywordInput>(
   language: Language<TKeywords>,
 ): QueryLangParser {
   const { tokens } = language;
   const parser = new QlParser(tokens);
 
   return {
+    instance: parser,
     parse: (input) => {
       parser.input = input;
       return { node: parser.expression(), errors: parser.errors };
