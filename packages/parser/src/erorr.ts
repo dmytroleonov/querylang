@@ -1,7 +1,7 @@
-export class SearchQlError extends Error {
-  override name = 'SearchQlError';
+export class QueryLangError extends Error {
+  override name = 'QueryLangError';
 
   constructor(message: string) {
-    super(`[SearchQl]: ${message}`);
+    super(`[QueryLang]: ${message}`);
   }
 }
