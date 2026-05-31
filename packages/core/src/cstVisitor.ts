@@ -19,7 +19,7 @@ export type QueryLangCstVisitorError = {
 export function createChevrotainCstVisitor<
   TKeywords extends CreateKeywordInput,
 >(
-  keywords: CreatedKeywords<TKeywords>,
+  _keywords: CreatedKeywords<TKeywords>,
   parser: InternalQlParser,
 ): QueryLangCstVisitor<TKeywords> {
   class QlCstVisitor extends parser.getBaseCstVisitorConstructor<
@@ -32,6 +32,19 @@ export function createChevrotainCstVisitor<
       super();
       this.validateVisitor();
     }
+
+    expression() {}
+    orExpression() {}
+    andExpression() {}
+    keywordOrAtomicExpression() {}
+    keywordExpression() {}
+    atomicExpression() {}
+    parenthesisExpression() {}
+    rangeExpression() {}
+    leftBoundedRange() {}
+    fullRange() {}
+    rightBoundedRange() {}
+    optionalWhitespace() {}
   }
 
   const cstVisitor = new QlCstVisitor();
