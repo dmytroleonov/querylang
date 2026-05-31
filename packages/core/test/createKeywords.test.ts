@@ -54,6 +54,7 @@ describe(createKeywordToken, () => {
     expect(tokens.asdf.config.type).toBe('string');
     expect(tokens.asdf.config.validator).toBeTypeOf('function');
     expect(tokens.asdf.tokenType.name).toBe('asdf');
+    expect(tokens.asdf.originalKeyword).toBe('asdf');
   });
 
   it('creates a chevrotain token and aliases with assigned categories', () => {
@@ -70,13 +71,16 @@ describe(createKeywordToken, () => {
     expect(mainToken.name).toBe('asdf');
     expect(mainToken.CATEGORIES).toHaveLength(1);
     expect(mainToken.CATEGORIES).to.include(Keyword);
+    expect(tokens.asdf.originalKeyword).toEqual('asdf');
 
     expect(tokens.alias1.tokenType.name).toBe('alias1');
+    expect(tokens.alias1.originalKeyword).toEqual('asdf');
     expect(tokens.alias1.tokenType.CATEGORIES).toHaveLength(2);
     expect(tokens.alias1.tokenType.CATEGORIES).to.include(mainToken);
     expect(tokens.alias1.tokenType.CATEGORIES).to.include(Keyword);
 
     expect(tokens.alias2.tokenType.name).toBe('alias2');
+    expect(tokens.alias2.originalKeyword).toEqual('asdf');
     expect(tokens.alias2.tokenType.CATEGORIES).toHaveLength(2);
     expect(tokens.alias2.tokenType.CATEGORIES).to.include(mainToken);
     expect(tokens.alias2.tokenType.CATEGORIES).to.include(Keyword);

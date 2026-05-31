@@ -24,15 +24,20 @@ export function validateKeyword(keywordLiteral: string): void {
 export type NormalizeConfig<T extends AnyKeyword> = Pick<T, 'type'> & {
   validator: ValidatorFn;
 };
-export type CreatedKeyword<T extends AnyKeyword> = {
-  config: NormalizeConfig<T>;
+export type CreatedKeyword<
+  TKeyword extends AnyKeyword,
+  TOriginalKeyword extends string,
+> = {
+  config: NormalizeConfig<TKeyword>;
   tokenType: TokenType;
+  originalKeyword: TOriginalKeyword;
 };
 export type CreatedKeywords<TKeywords extends CreateKeywordInput> = {
-  [K in keyof TKeywords]: CreatedKeyword<TKeywords[K]>;
+  [K in keyof TKeywords]: CreatedKeyword<TKeywords[K], Extract<K, string>>;
 } & {
   [K in keyof TKeywords as keyof TKeywords[K]['aliases']]: CreatedKeyword<
-    TKeywords[K]
+    TKeywords[K],
+    Extract<K, string>
   >;
 };
 
@@ -79,14 +84,16 @@ export function createKeywordTokens<
   TName extends string,
   TConfig extends AnyKeyword,
 >(name: TName, config: TConfig): CreatedKeywords<Record<TName, TConfig>> {
-  const keywords = {} as Record<string, CreatedKeyword<TConfig>>;
+  const keywords = {} as CreatedKeywords<Record<TName, TConfig>>;
   const mainToken = createKeywordToken(name);
   const normalizedConfig = normalizeConfig(config);
 
   keywords[name] = {
     config: normalizedConfig,
     tokenType: mainToken,
-  };
+    originalKeyword: name,
+    // biome-ignore lint/suspicious/noExplicitAny: is this possible to type?
+  } as any;
 
   for (const alias of Object.keys(
     config.aliases ?? {},
@@ -95,12 +102,12 @@ export function createKeywordTokens<
     keywords[alias] = {
       config: normalizedConfig,
       tokenType: aliasToken,
-    };
+      originalKeyword: name,
+      // biome-ignore lint/suspicious/noExplicitAny: is this possible to type?
+    } as any;
   }
 
-  return keywords as Record<TName, CreatedKeyword<TConfig>> & {
-    [K in keyof TConfig['aliases']]: TConfig;
-  };
+  return keywords;
 }
 
 // todo: throw on empty keywords object or when no string keywords are provided
