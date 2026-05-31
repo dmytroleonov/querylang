@@ -24,8 +24,8 @@ import {
 import { type CreatedKeywords, createKeywords } from '@/createKeywords.js';
 import type { CreateKeywordInput } from '@/types.js';
 
-export type CustomLexer = {
-  lex: (input: string) => ILexingResult;
+export type ChevrotainLexer = {
+  tokenize: (input: string) => ILexingResult;
 };
 
 // Tokens should be soreted in a reverse alphabetical order
@@ -92,7 +92,7 @@ export function createLanguage<TKeywords extends CreateKeywordInput>(
   };
 }
 
-export function createLexer(tokens: TokenType[]): CustomLexer {
+export function createChevrotainLexer(tokens: TokenType[]): ChevrotainLexer {
   const chevrotainLexer = new Lexer(tokens, {
     recoveryEnabled: false,
     deferDefinitionErrorsHandling: false,
@@ -106,7 +106,7 @@ export function createLexer(tokens: TokenType[]): CustomLexer {
   });
 
   return {
-    lex: (input) => {
+    tokenize: (input) => {
       return chevrotainLexer.tokenize(input);
     },
   };
