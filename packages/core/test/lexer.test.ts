@@ -2,7 +2,7 @@ import { createToken, type TokenType } from 'chevrotain';
 import { describe, expect, it } from 'vitest';
 import {
   createLanguage,
-  createLexer,
+  createChevrotainLexer,
   insertBuiltinTokens,
   sortTokens,
 } from '@/lexer.js';
@@ -66,15 +66,15 @@ describe(createLanguage, () => {
   });
 });
 
-describe(createLexer, () => {
+describe(createChevrotainLexer, () => {
   it('should not throw with correct input', () => {
     const language = createLanguage({ kw: { type: 'string' } });
-    expect(() => createLexer(language.tokens)).not.toThrow();
+    expect(() => createChevrotainLexer(language.tokens)).not.toThrow();
   });
 
   it('should lex built-in tokens', () => {
     const language = createLanguage({ kw: { type: 'string' } });
-    const lexer = createLexer(language.tokens);
+    const lexer = createChevrotainLexer(language.tokens);
     const res = lexer.lex(
       `!kw:(& | = ~ null 123.123 val1 >= <= > < \n\t\ra..b)`,
     );

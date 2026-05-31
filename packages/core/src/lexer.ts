@@ -92,7 +92,7 @@ export function createLanguage<TKeywords extends CreateKeywordInput>(
   };
 }
 
-export function createLexer(tokens: TokenType[]): CustomLexer {
+export function createChevrotainLexer(tokens: TokenType[]): CustomLexer {
   const chevrotainLexer = new Lexer(tokens, {
     recoveryEnabled: false,
     deferDefinitionErrorsHandling: false,
