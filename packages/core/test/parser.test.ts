@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createLanguage, createLexer } from '@/lexer.js';
-import { createParserInstance, QlParser } from '@/parser.js';
+import { createChevrotainParser, QlParser } from '@/parser.js';
 
-describe(createParserInstance, () => {
+describe(createChevrotainParser, () => {
   it('should not throw with correct input', () => {
     const language = createLanguage({ kw: { type: 'string' } });
     const lexer = createLexer(language.tokens);
-    const parser = createParserInstance(language);
+    const parser = createChevrotainParser(language);
     expect(parser.instance).toBeInstanceOf(QlParser);
     const { tokens } = lexer.lex(
       ' (asdf1..& ..123 &asdf..asdf2 & ..asdf3 |kw:1| kw:null) & ( kw:!( !asdf & asdf ) ) & asdf ',

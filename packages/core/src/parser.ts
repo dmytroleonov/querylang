@@ -199,7 +199,7 @@ export class QlParser extends CstParser {
   });
 }
 
-export function createParserInstance<TKeywords extends CreateKeywordInput>(
+export function createChevrotainParser<TKeywords extends CreateKeywordInput>(
   language: Language<TKeywords>,
 ): QueryLangParser {
   const { tokens } = language;
