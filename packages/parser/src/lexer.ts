@@ -25,7 +25,7 @@ import {
   type CreatedKeywords,
   createKeywords,
 } from '@/createKeywords.js';
-import type { CreateKeywordInput } from '@/keywords/types.js';
+import type { CreateKeywordInput } from '@/types.js';
 
 export type CustomLexer = {
   lex: (input: string) => ILexingResult;

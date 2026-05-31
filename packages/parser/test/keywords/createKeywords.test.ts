@@ -9,7 +9,7 @@ import {
   reservedKeywords,
   validateKeyword,
 } from '@/createKeywords.js';
-import type { ValidatorFn } from '@/keywords/types.js';
+import type { ValidatorFn } from '@/types.js';
 
 describe(validateKeyword, () => {
   it.each(

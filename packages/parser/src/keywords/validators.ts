@@ -1,5 +1,5 @@
 import { QueryLangError } from '@/erorrs.js';
-import type { DataType, ValidatorFn } from '@/keywords/types.js';
+import type { DataType, ValidatorFn } from '@/types.js';
 
 type StringValidatorConfig = {
   min?: number;
