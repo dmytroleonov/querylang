@@ -59,21 +59,14 @@ export class InternalQlParser extends CstParser {
     });
   });
 
-  public expression = this.RULE(
-    'expression',
-    ({ allowKeywords = true }: ParsingStepConfig = {}) => {
-      this.SUBRULE(this.orExpression, { ARGS: [{ allowKeywords }] });
-    },
-  );
-
-  private orExpression = this.RULE(
+  public orExpression = this.RULE(
     'orExpression',
-    (config?: ParsingStepConfig) => {
-      this.SUBRULE(this.andExpression, { ARGS: [config] });
+    ({ allowKeywords = true }: ParsingStepConfig = {}) => {
+      this.SUBRULE(this.andExpression, { ARGS: [{ allowKeywords }] });
       this.MANY(() => {
         this.CONSUME(Or);
         this.SUBRULE(this.optionalWhitespace);
-        this.SUBRULE2(this.andExpression, { ARGS: [config] });
+        this.SUBRULE2(this.andExpression, { ARGS: [{ allowKeywords }] });
       });
     },
   );
@@ -174,7 +167,7 @@ export class InternalQlParser extends CstParser {
     'parenthesisExpression',
     (config?: ParsingStepConfig) => {
       this.CONSUME(LParen);
-      this.SUBRULE(this.expression, { ARGS: [config] });
+      this.SUBRULE(this.orExpression, { ARGS: [config] });
       this.CONSUME(RParen);
     },
   );
@@ -211,7 +204,7 @@ export function createChevrotainParser(tokens: TokenType[]): ChevrotainParser {
     instance: parser,
     parse: (input) => {
       parser.input = input;
-      return { node: parser.expression(), errors: parser.errors };
+      return { node: parser.orExpression(), errors: parser.errors };
     },
   };
 }

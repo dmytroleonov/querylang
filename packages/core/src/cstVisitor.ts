@@ -33,7 +33,6 @@ export function createChevrotainCstVisitor<
       this.validateVisitor();
     }
 
-    expression() {}
     orExpression() {}
     andExpression() {}
     keywordOrAtomicExpression() {}
