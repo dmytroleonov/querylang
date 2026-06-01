@@ -14,7 +14,7 @@ describe(createChevrotainCstVisitor, () => {
     );
     const { tokens } = lexer.tokenize('asdf');
     const { node } = parser.parse(tokens);
-    const ast = visitor.visit(node);
+    const { ast } = visitor.visit(node);
     expect(ast).toStrictEqual({
       type: 'KEYWORD',
       keyword: 'kw',
