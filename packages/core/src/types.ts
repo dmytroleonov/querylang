@@ -30,27 +30,11 @@ export type InferKeywordConfig<TKeywords extends CreateKeywordInput> = {
         : never;
 };
 
-export type LRangeOp<
+export type BetweenOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  op: 'L_RANGE';
-  min: TConfig[TKeyword];
-};
-
-export type RRangeOp<
-  TConfig extends KeywordTypes,
-  TKeyword extends keyof TConfig,
-> = {
-  op: 'R_RANGE';
-  max: TConfig[TKeyword];
-};
-
-export type FullRangeOp<
-  TConfig extends KeywordTypes,
-  TKeyword extends keyof TConfig,
-> = {
-  op: 'FULL_RANGE';
+  op: 'BETWEEN';
   min: TConfig[TKeyword];
   max: TConfig[TKeyword];
 };
@@ -123,9 +107,7 @@ export type NumberOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > =
-  | LRangeOp<TConfig, TKeyword>
-  | RRangeOp<TConfig, TKeyword>
-  | FullRangeOp<TConfig, TKeyword>
+  | BetweenOp<TConfig, TKeyword>
   | EqOp<TConfig, TKeyword>
   | LtOp<TConfig, TKeyword>
   | LteOp<TConfig, TKeyword>
