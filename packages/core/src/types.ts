@@ -153,6 +153,14 @@ export type OrExpression<
   children: Expression<TConfig, TKeyword>[];
 };
 
+export type NotExpression<
+  TConfig extends KeywordTypes,
+  TKeyword extends keyof TConfig = keyof TConfig,
+> = {
+  type: 'NOT';
+  operand: Expression<TConfig, TKeyword>;
+};
+
 export type KeywordTypes = Record<string, number | string | boolean>;
 
 export type Expression<
@@ -161,7 +169,8 @@ export type Expression<
 > =
   | OrExpression<TConfig, TKeyword>
   | AndExpression<TConfig, TKeyword>
-  | KeywordExpression<TConfig, TKeyword>;
+  | KeywordExpression<TConfig, TKeyword>
+  | NotExpression<TConfig, TKeyword>;
 
 export type Empty = { type: 'EMPTY' };
 
