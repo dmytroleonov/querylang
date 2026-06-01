@@ -2,12 +2,36 @@ export type DataType = 'string' | 'number' | 'boolean';
 
 export type Aliases = Record<string, true>;
 
-export type ValidatorFn = (value: string) => boolean;
+export type InferTsType<T extends DataType> = T extends 'string'
+  ? string
+  : T extends 'number'
+    ? number
+    : T extends 'boolean'
+      ? boolean
+      : never;
+
+export type TransformError = {
+  message: string;
+};
+
+export type TransformResult<T extends DataType> =
+  | {
+      ok: true;
+      value: InferTsType<T>;
+    }
+  | {
+      ok: false;
+      error: TransformError;
+    };
+
+export type TransformFn<T extends DataType> = (
+  value: string,
+) => TransformResult<T>;
 
 export type KeywordTypeFactory<TDataType extends DataType> = {
   type: TDataType;
   aliases?: Aliases;
-  validator?: ValidatorFn;
+  transform?: TransformFn<TDataType>;
 };
 
 export type StringKeywordType = KeywordTypeFactory<'string'>;

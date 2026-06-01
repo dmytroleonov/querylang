@@ -9,7 +9,7 @@ import {
   validateKeyword,
 } from '@/createKeywords.js';
 import { QueryLangError } from '@/erorr.js';
-import type { ValidatorFn } from '@/types.js';
+import type { TransformFn } from '@/types.js';
 
 describe(validateKeyword, () => {
   it.each(
@@ -52,7 +52,7 @@ describe(createKeywordToken, () => {
     const tokens = createKeywordTokens('asdf', { type: 'string' });
     expect(Object.keys(tokens)).toHaveLength(1);
     expect(tokens.asdf.config.type).toBe('string');
-    expect(tokens.asdf.config.validator).toBeTypeOf('function');
+    expect(tokens.asdf.config.transform).toBeTypeOf('function');
     expect(tokens.asdf.tokenType.name).toBe('asdf');
     expect(tokens.asdf.originalKeyword).toBe('asdf');
   });
@@ -145,14 +145,14 @@ describe(createKeywords, () => {
 });
 
 describe(normalizeConfig, () => {
-  it('creates a normalized config with a provided type and validator', () => {
-    const validator: ValidatorFn = () => true;
+  it('creates a normalized config with a provided type and transform', () => {
+    const transform: TransformFn<'string'> = (value) => ({ ok: true, value });
     const normalized = normalizeConfig({
       type: 'string',
       aliases: { a: true },
-      validator,
+      transform,
     });
-    expect(normalized).toStrictEqual({ type: 'string', validator });
+    expect(normalized).toStrictEqual({ type: 'string', transform });
   });
 
   it('creates a normalized config with a default validaitor', () => {
@@ -162,6 +162,6 @@ describe(normalizeConfig, () => {
     });
     expect(Object.keys(normalized)).toHaveLength(2);
     expect(normalized.type).toBe('string');
-    expect(normalized.validator).toBeTypeOf('function');
+    expect(normalized.transform).toBeTypeOf('function');
   });
 });

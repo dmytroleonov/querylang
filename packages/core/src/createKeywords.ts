@@ -1,8 +1,8 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
 import { Keyword, Value } from '@/builtin.js';
 import { QueryLangError } from '@/erorr.js';
-import type { AnyKeyword, CreateKeywordInput, ValidatorFn } from '@/types.js';
-import { getDefaultValidator } from '@/validators.js';
+import type { AnyKeyword, CreateKeywordInput, TransformFn } from '@/types.js';
+import { getDefaultTransform } from '@/transformer.js';
 
 export const reservedKeywords = ['null'];
 
@@ -22,7 +22,7 @@ export function validateKeyword(keywordLiteral: string): void {
 }
 
 export type NormalizeConfig<T extends AnyKeyword> = Pick<T, 'type'> & {
-  validator: ValidatorFn;
+  transform: TransformFn<T['type']>;
 };
 export type CreatedKeyword<
   TKeyword extends AnyKeyword,
@@ -71,10 +71,10 @@ type ExtractAliases<T extends AnyKeyword> = Extract<keyof T['aliases'], string>;
 export function normalizeConfig<TKeyword extends AnyKeyword>(
   config: TKeyword,
 ): NormalizeConfig<TKeyword> {
-  const defaultValidator = getDefaultValidator(config.type);
+  const defaultTransform = getDefaultTransform(config.type);
   const normalizedConfig: NormalizeConfig<TKeyword> = {
     type: config.type,
-    validator: config.validator ?? defaultValidator,
+    transform: config.transform ?? defaultTransform,
   };
 
   return normalizedConfig;
