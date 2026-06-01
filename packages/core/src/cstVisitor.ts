@@ -43,7 +43,7 @@ export function createChevrotainCstVisitor<
     leftBoundedRange() {}
     fullRange() {}
     rightBoundedRange() {}
-    optionalWhitespace() {}
+    valueExpression() {}
   }
 
   const cstVisitor = new QlCstVisitor();

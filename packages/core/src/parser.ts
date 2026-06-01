@@ -53,19 +53,15 @@ export class InternalQlParser extends CstParser {
     this.performSelfAnalysis();
   }
 
-  private optionalWhitespace = this.RULE('optionalWhitespace', () => {
-    this.OPTION(() => {
-      this.CONSUME(Whitespace);
-    });
-  });
-
   public orExpression = this.RULE(
     'orExpression',
     ({ allowKeywords = true }: ParsingStepConfig = {}) => {
       this.SUBRULE(this.andExpression, { ARGS: [{ allowKeywords }] });
       this.MANY(() => {
         this.CONSUME(Or);
-        this.SUBRULE(this.optionalWhitespace);
+        this.OPTION(() => {
+          this.CONSUME(Whitespace);
+        });
         this.SUBRULE2(this.andExpression, { ARGS: [{ allowKeywords }] });
       });
     },
@@ -77,7 +73,9 @@ export class InternalQlParser extends CstParser {
       this.SUBRULE(this.keywordOrAtomicExpression, { ARGS: [config] });
       this.MANY(() => {
         this.OPTION({ DEF: () => this.CONSUME(And) });
-        this.SUBRULE(this.optionalWhitespace);
+        this.OPTION1(() => {
+          this.CONSUME(Whitespace);
+        });
         this.SUBRULE2(this.keywordOrAtomicExpression, { ARGS: [config] });
       });
     },
@@ -86,7 +84,9 @@ export class InternalQlParser extends CstParser {
   private keywordOrAtomicExpression = this.RULE(
     'keywordOrAtomicExpression',
     (config?: ParsingStepConfig) => {
-      this.SUBRULE(this.optionalWhitespace);
+      this.OPTION(() => {
+        this.CONSUME(Whitespace);
+      });
       this.OR([
         {
           GATE: () => !!config?.allowKeywords,
@@ -128,19 +128,7 @@ export class InternalQlParser extends CstParser {
         },
         {
           ALT: () => {
-            this.OPTION1({
-              DEF: () => {
-                this.OR1([
-                  { ALT: () => this.CONSUME(Gte) },
-                  { ALT: () => this.CONSUME(Gt) },
-                  { ALT: () => this.CONSUME(Lte) },
-                  { ALT: () => this.CONSUME(Lt) },
-                  { ALT: () => this.CONSUME(Eq) },
-                  { ALT: () => this.CONSUME(Tilde) },
-                ]);
-              },
-            });
-            this.CONSUME(AnyValue);
+            this.SUBRULE(this.valueExpression);
           },
         },
       ]);
@@ -151,7 +139,10 @@ export class InternalQlParser extends CstParser {
         },
         {
           GATE: () => !this.isWhitespaceRequired(),
-          ALT: () => this.SUBRULE1(this.optionalWhitespace),
+          ALT: () =>
+            this.OPTION1(() => {
+              this.CONSUME1(Whitespace);
+            }),
         },
       ]);
     },
@@ -194,6 +185,22 @@ export class InternalQlParser extends CstParser {
   private leftBoundedRange = this.RULE('leftBoundedRange', () => {
     this.CONSUME(AnyValue);
     this.CONSUME(Range);
+  });
+
+  private valueExpression = this.RULE('valueExpression', () => {
+    this.OPTION1({
+      DEF: () => {
+        this.OR1([
+          { ALT: () => this.CONSUME(Gte) },
+          { ALT: () => this.CONSUME(Gt) },
+          { ALT: () => this.CONSUME(Lte) },
+          { ALT: () => this.CONSUME(Lt) },
+          { ALT: () => this.CONSUME(Eq) },
+          { ALT: () => this.CONSUME(Tilde) },
+        ]);
+      },
+    });
+    this.CONSUME(AnyValue);
   });
 }
 
