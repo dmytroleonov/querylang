@@ -1,3 +1,4 @@
+import { type } from 'node:os';
 import type { CstNode } from 'chevrotain';
 import type { CreatedKeywords } from '@/createKeywords.js';
 import type {
@@ -18,6 +19,7 @@ import type { InternalQlParser } from '@/parser.js';
 import type {
   Ast,
   CreateKeywordInput,
+  Expression,
   InferKeywordConfig,
   Op,
 } from '@/types.js';
@@ -45,7 +47,7 @@ export function createChevrotainCstVisitor<
   keywords: CreatedKeywords<TKeywords>,
   parser: InternalQlParser,
 ): QueryLangCstVisitor<TKeywords> {
-  type OutputAst = Ast<InferKeywordConfig<TKeywords>>;
+  type OutputAst = Expression<InferKeywordConfig<TKeywords>>;
   type Param = VisitorParam<TKeywords>;
   // const stringKeywords: Extract<TKeywords, {type: 'string'}>[];
 
@@ -63,8 +65,17 @@ export function createChevrotainCstVisitor<
       this.validateVisitor();
     }
 
-    orExpression(_ctx: OrExpressionCstChildren, param?: Param): OutputAst {
-      return this.visit(_ctx.andExpression, param);
+    orExpression(ctx: OrExpressionCstChildren, param?: Param): OutputAst {
+      if (ctx.andExpression.length === 1) {
+        return this.visit(ctx.andExpression, param);
+      }
+
+      return {
+        type: 'OR',
+        children: ctx.andExpression.map((expression) =>
+          this.visit(expression, param),
+        ),
+      };
     }
 
     andExpression(_ctx: AndExpressionCstChildren, param?: Param): OutputAst {
