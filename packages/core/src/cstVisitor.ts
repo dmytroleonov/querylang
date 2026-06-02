@@ -178,8 +178,18 @@ export function createChevrotainCstVisitor<
       return this.visit(ctx.orExpression, param);
     }
 
-    rangeExpression(_ctx: RangeExpressionCstChildren): OutputAst {
-      return { type: 'EMPTY' };
+    rangeExpression(ctx: RangeExpressionCstChildren, param?: Param): OutputAst {
+      if (ctx.fullRange) {
+        return this.visit(ctx.fullRange, param);
+      }
+      if (ctx.leftBoundedRange) {
+        return this.visit(ctx.leftBoundedRange, param);
+      }
+      if (ctx.rightBoundedRange) {
+        return this.visit(ctx.rightBoundedRange, param);
+      }
+
+      throw new QueryLangError('Unreachable');
     }
 
     leftBoundedRange(_ctx: LeftBoundedRangeCstChildren): OutputAst {
