@@ -107,9 +107,23 @@ export function createChevrotainCstVisitor<
       throw new QueryLangError('Unreachable');
     }
 
-    keywordExpression(_ctx: KeywordExpressionCstChildren): OutputAst {
-      return this.visit(_ctx.atomicExpression, {
-        keyword: _ctx.keyword[0].image,
+    keywordExpression(ctx: KeywordExpressionCstChildren): OutputAst {
+      // biome-ignore lint/style/noNonNullAssertion: keyword[0] will always be defined
+      const keyword = ctx.keyword[0]!.image as Exclude<
+        Param['keyword'],
+        undefined
+      >;
+      if (ctx.not) {
+        return {
+          type: 'NOT',
+          operand: this.visit(ctx.atomicExpression, {
+            keyword,
+          }),
+        };
+      }
+
+      return this.visit(ctx.atomicExpression, {
+        keyword,
       });
     }
 
