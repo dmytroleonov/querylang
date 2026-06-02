@@ -192,16 +192,59 @@ export function createChevrotainCstVisitor<
       throw new QueryLangError('Unreachable');
     }
 
-    leftBoundedRange(_ctx: LeftBoundedRangeCstChildren): OutputAst {
-      return { type: 'EMPTY' };
+    leftBoundedRange(
+      ctx: LeftBoundedRangeCstChildren,
+      { keyword }: Param = {},
+    ): OutputAst {
+      if (!keyword) {
+        // TODO: searcy by all valid keywords
+        return {
+          type: 'AND',
+          children: [],
+        };
+      }
+      const { transform } = keywords[keyword].config;
+      const value = ctx.anyValue[0]!.image;
+      const res = transform(value);
+      if (!res.ok) {
+        // TODO: add error message here
+        return {
+          type: 'AND',
+          children: [],
+        };
+      }
+
+      return {
+        type: 'KEYWORD',
+        keyword,
+        value: {
+          op: 'GTE',
+          value: res.value,
+        },
+      };
     }
 
-    fullRange(_ctx: FullRangeCstChildren): OutputAst {
-      return { type: 'EMPTY' };
+    fullRange(ctx: FullRangeCstChildren, { keyword }: Param = {}): OutputAst {
+      if (!keyword) {
+        // TODO: searcy by all valid keywords
+        return {
+          type: 'AND',
+          children: [],
+        };
+      }
     }
 
-    rightBoundedRange(_ctx: RightBoundedRangeCstChildren): OutputAst {
-      return { type: 'EMPTY' };
+    rightBoundedRange(
+      ctx: RightBoundedRangeCstChildren,
+      { keyword }: Param = {},
+    ): OutputAst {
+      if (!keyword) {
+        // TODO: searcy by all valid keywords
+        return {
+          type: 'AND',
+          children: [],
+        };
+      }
     }
 
     valueExpression(
@@ -236,7 +279,6 @@ export function createChevrotainCstVisitor<
         value,
       };
 
-      console.log(ctx);
       if (ctx.eq) {
         op = { op: 'EQ', value };
       } else if (ctx.tilde) {
