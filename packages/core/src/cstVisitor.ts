@@ -232,6 +232,28 @@ export function createChevrotainCstVisitor<
           children: [],
         };
       }
+      const { transform } = keywords[keyword].config;
+      const lValue = ctx.anyValue[0]!.image;
+      const rValue = ctx.anyValue[1]!.image;
+      const lRes = transform(lValue);
+      const rRes = transform(rValue);
+      if (!lRes.ok || !rRes.ok) {
+        // TODO: add error message here
+        return {
+          type: 'AND',
+          children: [],
+        };
+      }
+
+      return {
+        type: 'KEYWORD',
+        keyword,
+        value: {
+          op: 'BETWEEN',
+          min: lRes.value,
+          max: rRes.value,
+        },
+      };
     }
 
     rightBoundedRange(

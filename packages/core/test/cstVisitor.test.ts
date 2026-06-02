@@ -12,16 +12,48 @@ describe(createChevrotainCstVisitor, () => {
       language.keywords,
       parser.instance,
     );
-    const { tokens } = lexer.tokenize('kw:(asdf)');
+    const { tokens } = lexer.tokenize('kw:!(search (=dimon | !~serega))');
     const { node } = parser.parse(tokens);
     const { ast } = visitor.visit(node);
     expect(ast).toStrictEqual({
-      type: 'KEYWORD',
-      keyword: 'kw',
-      value: {
-        op: 'ILIKE',
-        value: 'asdf',
+      operand: {
+        children: [
+          {
+            keyword: 'kw',
+            type: 'KEYWORD',
+            value: {
+              op: 'ILIKE',
+              value: 'search',
+            },
+          },
+          {
+            children: [
+              {
+                keyword: 'kw',
+                type: 'KEYWORD',
+                value: {
+                  op: 'EQ',
+                  value: 'dimon',
+                },
+              },
+              {
+                operand: {
+                  keyword: 'kw',
+                  type: 'KEYWORD',
+                  value: {
+                    op: 'LIKE',
+                    value: 'serega',
+                  },
+                },
+                type: 'NOT',
+              },
+            ],
+            type: 'OR',
+          },
+        ],
+        type: 'AND',
       },
+      type: 'NOT',
     });
   });
 });
