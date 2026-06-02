@@ -78,8 +78,17 @@ export function createChevrotainCstVisitor<
       };
     }
 
-    andExpression(_ctx: AndExpressionCstChildren, param?: Param): OutputAst {
-      return this.visit(_ctx.keywordOrAtomicExpression, param);
+    andExpression(ctx: AndExpressionCstChildren, param?: Param): OutputAst {
+      if (ctx.keywordOrAtomicExpression.length === 1) {
+        return this.visit(ctx.keywordOrAtomicExpression, param);
+      }
+
+      return {
+        type: 'AND',
+        children: ctx.keywordOrAtomicExpression.map((expression) =>
+          this.visit(expression, param),
+        ),
+      };
     }
 
     keywordOrAtomicExpression(
