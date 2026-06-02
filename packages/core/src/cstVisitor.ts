@@ -113,32 +113,69 @@ export function createChevrotainCstVisitor<
         Param['keyword'],
         undefined
       >;
+      const expression = this.visit(ctx.atomicExpression, {
+        keyword,
+      });
+
       if (ctx.not) {
         return {
           type: 'NOT',
-          operand: this.visit(ctx.atomicExpression, {
-            keyword,
-          }),
+          operand: expression,
         };
       }
 
-      return this.visit(ctx.atomicExpression, {
-        keyword,
-      });
+      return expression;
     }
 
     atomicExpression(
-      _ctx: AtomicExpressionCstChildren,
+      ctx: AtomicExpressionCstChildren,
       param?: VisitorParam<TKeywords>,
     ): OutputAst {
-      return this.visit(_ctx.valueExpression!, param);
+      if (ctx.valueExpression) {
+        const expression = this.visit(ctx.valueExpression, param);
+
+        if (ctx.not) {
+          return {
+            type: 'NOT',
+            operand: expression,
+          };
+        }
+
+        return expression;
+      }
+      if (ctx.rangeExpression) {
+        const expression = this.visit(ctx.rangeExpression, param);
+
+        if (ctx.not) {
+          return {
+            type: 'NOT',
+            operand: expression,
+          };
+        }
+
+        return expression;
+      }
+      if (ctx.parenthesisExpression) {
+        const expression = this.visit(ctx.parenthesisExpression, param);
+
+        if (ctx.not) {
+          return {
+            type: 'NOT',
+            operand: expression,
+          };
+        }
+
+        return expression;
+      }
+
+      throw new QueryLangError('Unreachable');
     }
 
     parenthesisExpression(
-      _ctx: ParenthesisExpressionCstChildren,
+      ctx: ParenthesisExpressionCstChildren,
       param?: Param,
     ): OutputAst {
-      return { type: 'EMPTY' };
+      return this.visit(ctx.orExpression, param);
     }
 
     rangeExpression(_ctx: RangeExpressionCstChildren): OutputAst {
