@@ -15,7 +15,12 @@ import type {
   ValueExpressionCstChildren,
 } from '@/cstVisitor.types.js';
 import type { InternalQlParser } from '@/parser.js';
-import type { Ast, CreateKeywordInput, InferKeywordConfig } from '@/types.js';
+import type {
+  Ast,
+  CreateKeywordInput,
+  InferKeywordConfig,
+  Op,
+} from '@/types.js';
 
 export type QueryLangCstVisitorResult<TKeywords extends CreateKeywordInput> = {
   errors: QueryLangCstVisitorError[];
@@ -30,17 +35,26 @@ export type QueryLangCstVisitorError = {
   message: string;
 };
 
+export type VisitorParam<TKeywords extends CreateKeywordInput> = {
+  keyword?: Extract<keyof TKeywords, string>;
+};
+
 export function createChevrotainCstVisitor<
   TKeywords extends CreateKeywordInput,
 >(
-  _keywords: CreatedKeywords<TKeywords>,
+  keywords: CreatedKeywords<TKeywords>,
   parser: InternalQlParser,
 ): QueryLangCstVisitor<TKeywords> {
   type OutputAst = Ast<InferKeywordConfig<TKeywords>>;
+  type Param = VisitorParam<TKeywords>;
+  // const stringKeywords: Extract<TKeywords, {type: 'string'}>[];
 
   class QlCstVisitor
-    extends parser.getBaseCstVisitorConstructor<never, OutputAst>()
-    implements IQueryLangVisitor<never, OutputAst>
+    extends parser.getBaseCstVisitorConstructor<
+      VisitorParam<TKeywords>,
+      OutputAst
+    >()
+    implements IQueryLangVisitor<Param, OutputAst>
   {
     public errors: QueryLangCstVisitorError[] = [];
 
@@ -49,29 +63,38 @@ export function createChevrotainCstVisitor<
       this.validateVisitor();
     }
 
-    orExpression(_ctx: OrExpressionCstChildren): OutputAst {
-      return { type: 'EMPTY' };
+    orExpression(_ctx: OrExpressionCstChildren, param?: Param): OutputAst {
+      return this.visit(_ctx.andExpression, param);
     }
 
-    andExpression(_ctx: AndExpressionCstChildren): OutputAst {
-      return { type: 'EMPTY' };
+    andExpression(_ctx: AndExpressionCstChildren, param?: Param): OutputAst {
+      return this.visit(_ctx.keywordOrAtomicExpression, param);
     }
 
     keywordOrAtomicExpression(
       _ctx: KeywordOrAtomicExpressionCstChildren,
+      param?: Param,
     ): OutputAst {
-      return { type: 'EMPTY' };
+      return this.visit(_ctx.keywordExpression!);
     }
 
     keywordExpression(_ctx: KeywordExpressionCstChildren): OutputAst {
-      return { type: 'EMPTY' };
+      return this.visit(_ctx.atomicExpression, {
+        keyword: _ctx.keyword[0].image,
+      });
     }
 
-    atomicExpression(_ctx: AtomicExpressionCstChildren): OutputAst {
-      return { type: 'EMPTY' };
+    atomicExpression(
+      _ctx: AtomicExpressionCstChildren,
+      param?: VisitorParam<TKeywords>,
+    ): OutputAst {
+      return this.visit(_ctx.valueExpression!, param);
     }
 
-    parenthesisExpression(_ctx: ParenthesisExpressionCstChildren): OutputAst {
+    parenthesisExpression(
+      _ctx: ParenthesisExpressionCstChildren,
+      param?: Param,
+    ): OutputAst {
       return { type: 'EMPTY' };
     }
 
@@ -91,8 +114,58 @@ export function createChevrotainCstVisitor<
       return { type: 'EMPTY' };
     }
 
-    valueExpression(_ctx: ValueExpressionCstChildren): OutputAst {
-      return { type: 'EMPTY' };
+    valueExpression(
+      ctx: ValueExpressionCstChildren,
+      { keyword }: VisitorParam<TKeywords> = {},
+    ): OutputAst {
+      if (!keyword) {
+        return {
+          type: 'OR',
+          // fill with string keywords
+          children: [],
+        };
+      }
+
+      // biome-ignore lint/style/noNonNullAssertion: we will always have at least one token
+      const { image } = ctx.anyValue[0]!;
+      const { transform } = keywords[keyword].config;
+      const res = transform(image);
+      if (!res.ok) {
+        // add error message here
+        return {
+          type: 'AND',
+          children: [],
+        };
+      }
+
+      const { value } = res;
+      let op: {
+        [K in typeof keyword]: Op<InferKeywordConfig<TKeywords>, K>;
+      }[typeof keyword] = {
+        op: 'ILIKE',
+        value,
+      };
+
+      console.log(ctx);
+      if (ctx.eq) {
+        op = { op: 'EQ', value };
+      } else if (ctx.tilde) {
+        op = { op: 'LIKE', value };
+      } else if (ctx.gt) {
+        op = { op: 'GT', value };
+      } else if (ctx.gte) {
+        op = { op: 'GTE', value };
+      } else if (ctx.lt) {
+        op = { op: 'LT', value };
+      } else if (ctx.lte) {
+        op = { op: 'LTE', value };
+      }
+
+      return {
+        type: 'KEYWORD',
+        keyword,
+        value: op,
+      };
     }
   }
 

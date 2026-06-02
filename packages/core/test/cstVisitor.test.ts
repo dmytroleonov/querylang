@@ -4,7 +4,7 @@ import { createChevrotainLexer, createLanguage } from '@/lexer.js';
 import { createChevrotainParser } from '@/parser.js';
 
 describe(createChevrotainCstVisitor, () => {
-  it.fails('should create an AST with a valid input', () => {
+  it('should create an AST with a valid input', () => {
     const language = createLanguage({ kw: { type: 'string' } });
     const lexer = createChevrotainLexer(language.tokens);
     const parser = createChevrotainParser(language.tokens);
@@ -12,7 +12,7 @@ describe(createChevrotainCstVisitor, () => {
       language.keywords,
       parser.instance,
     );
-    const { tokens } = lexer.tokenize('asdf');
+    const { tokens } = lexer.tokenize('kw:(asdf)');
     const { node } = parser.parse(tokens);
     const { ast } = visitor.visit(node);
     expect(ast).toStrictEqual({
