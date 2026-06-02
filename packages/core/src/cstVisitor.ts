@@ -245,6 +245,25 @@ export function createChevrotainCstVisitor<
           children: [],
         };
       }
+      const { transform } = keywords[keyword].config;
+      const value = ctx.anyValue[0]!.image;
+      const res = transform(value);
+      if (!res.ok) {
+        // TODO: add error message here
+        return {
+          type: 'AND',
+          children: [],
+        };
+      }
+
+      return {
+        type: 'KEYWORD',
+        keyword,
+        value: {
+          op: 'LTE',
+          value: res.value,
+        },
+      };
     }
 
     valueExpression(
