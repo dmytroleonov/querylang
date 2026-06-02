@@ -23,6 +23,7 @@ import type {
   InferKeywordConfig,
   Op,
 } from '@/types.js';
+import { QueryLangError } from './erorr.js';
 
 export type QueryLangCstVisitorResult<TKeywords extends CreateKeywordInput> = {
   errors: QueryLangCstVisitorError[];
@@ -92,10 +93,18 @@ export function createChevrotainCstVisitor<
     }
 
     keywordOrAtomicExpression(
-      _ctx: KeywordOrAtomicExpressionCstChildren,
+      ctx: KeywordOrAtomicExpressionCstChildren,
       param?: Param,
     ): OutputAst {
-      return this.visit(_ctx.keywordExpression!);
+      if (ctx.keywordExpression) {
+        return this.visit(ctx.keywordExpression);
+      }
+      if (ctx.atomicExpression) {
+        return this.visit(ctx.atomicExpression, param);
+      }
+
+      // TODO: don't throw?
+      throw new QueryLangError('Unreachable');
     }
 
     keywordExpression(_ctx: KeywordExpressionCstChildren): OutputAst {
