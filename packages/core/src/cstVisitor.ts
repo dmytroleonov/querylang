@@ -59,7 +59,7 @@ export function createChevrotainCstVisitor<
   type OutputAst = Expression<{ [x: string]: KeywordDataType }>;
   type Param = VisitorParam<TKeywords>;
   const originalKeywords = {} as CreatedKeywords<{ [kw: string]: AnyKeyword }>;
-  for (const kw in Object.keys(keywords)) {
+  for (const kw of Object.keys(keywords)) {
     if (keywords[kw]!.originalKeyword === kw) {
       originalKeywords[kw] = keywords[kw]!;
     }
