@@ -199,6 +199,10 @@ export type NotExpression<
 
 export type KeywordDataType = number | string | boolean;
 export type KeywordTypes = Record<string, KeywordDataType>;
+export type AnyKeywordExpression = KeywordExpression<
+  { [key: string]: KeywordDataType },
+  string
+>;
 
 export type Expression<
   TConfig extends KeywordTypes,

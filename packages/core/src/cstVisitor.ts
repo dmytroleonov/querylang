@@ -17,9 +17,11 @@ import type {
 import type { InternalQlParser } from '@/parser.js';
 import type {
   AnyKeyword,
+  AnyKeywordExpression,
   AnyOpType,
   Ast,
   CreateKeywordInput,
+  DataType,
   Expression,
   InferKeywordConfig,
   KeywordDataType,
@@ -59,9 +61,9 @@ export function createChevrotainCstVisitor<
   type OutputAst = Expression<{ [x: string]: KeywordDataType }>;
   type Param = VisitorParam<TKeywords>;
   const originalKeywords = {} as CreatedKeywords<{ [kw: string]: AnyKeyword }>;
-  for (const kw of Object.keys(keywords)) {
-    if (keywords[kw]!.originalKeyword === kw) {
-      originalKeywords[kw] = keywords[kw]!;
+  for (const [kw, definition] of Object.entries(keywords)) {
+    if (definition.originalKeyword === kw) {
+      originalKeywords[kw] = definition;
     }
   }
 
@@ -305,51 +307,23 @@ export function createChevrotainCstVisitor<
       };
     }
 
-    valueExpression(
+    private buildKeywordExpression(
       ctx: ValueExpressionCstChildren,
-      { keyword }: VisitorParam<TKeywords> = {},
-    ): OutputAst {
-      const {
-        image,
-        startOffset,
-        startLine,
-        startColumn,
-        endOffset,
-        endLine,
-        endColumn,
-      } = ctx.anyValue[0]!;
-      if (!keyword) {
-        return {
-          type: 'OR',
-          // fill with string keywords
-          children: [],
-        };
-      }
-
-      const { transform, type: keywordType } = keywords[keyword].config;
-      const res = transform(image);
-      if (!res.ok) {
-        this.addError({
-          message: res.error.message,
-          startOffset,
-          startLine,
-          startColumn,
-          endOffset,
-          endLine,
-          endColumn,
-        });
-        return {
-          type: 'AND',
-          children: [],
-        };
-      }
-
+      {
+        keyword,
+        type,
+        value,
+      }: {
+        keyword: string;
+        type: DataType;
+        value: KeywordDataType;
+      },
+    ): AnyKeywordExpression {
       let opType: AnyOpType = 'ILIKE';
-      if (keywordType === 'number') {
+      if (type === 'number') {
         opType = 'EQ';
       }
 
-      const { value } = res;
       let op: Op<{ [key: string]: KeywordDataType }, string> = {
         type: opType,
         value,
@@ -374,6 +348,76 @@ export function createChevrotainCstVisitor<
         keyword,
         op,
       };
+    }
+
+    valueExpression(
+      ctx: ValueExpressionCstChildren,
+      { keyword }: VisitorParam<TKeywords> = {},
+    ): OutputAst {
+      const {
+        image,
+        startOffset,
+        startLine,
+        startColumn,
+        endOffset,
+        endLine,
+        endColumn,
+      } = ctx.anyValue[0]!;
+      if (!keyword) {
+        const children: AnyKeywordExpression[] = [];
+        for (const [kw, { config }] of Object.entries(originalKeywords)) {
+          const res = config.transform(image);
+          if (res.ok) {
+            const expression = this.buildKeywordExpression(ctx, {
+              keyword: kw,
+              type: config.type,
+              value: res.value,
+            });
+            children.push(expression);
+          }
+        }
+
+        if (!children.length) {
+          this.addError({
+            message: "this value can't be used to search by any keywords",
+            startOffset,
+            startLine,
+            startColumn,
+            endOffset,
+            endLine,
+            endColumn,
+          });
+        }
+
+        return {
+          type: 'OR',
+          children,
+        };
+      }
+
+      const { transform, type: keywordType } = keywords[keyword].config;
+      const res = transform(image);
+      if (!res.ok) {
+        this.addError({
+          message: res.error.message,
+          startOffset,
+          startLine,
+          startColumn,
+          endOffset,
+          endLine,
+          endColumn,
+        });
+        return {
+          type: 'AND',
+          children: [],
+        };
+      }
+
+      return this.buildKeywordExpression(ctx, {
+        keyword,
+        type: keywordType,
+        value: res.value,
+      });
     }
   }
 
