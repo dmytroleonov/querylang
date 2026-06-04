@@ -55,6 +55,9 @@ export type VisitorParam<TKeywords extends CreateKeywordInput> = {
   keyword?: Extract<keyof TKeywords, string>;
 };
 
+// TODO: escape strings
+// TODO: handle null values
+
 export function createChevrotainCstVisitor<
   TKeywords extends CreateKeywordInput,
 >(
@@ -126,7 +129,6 @@ export function createChevrotainCstVisitor<
         return this.visit(ctx.atomicExpression, param);
       }
 
-      // TODO: don't throw?
       throw new QueryLangError('Unreachable');
     }
 
