@@ -244,24 +244,65 @@ export function createChevrotainCstVisitor<
     }
 
     fullRange(ctx: FullRangeCstChildren, { keyword }: Param = {}): OutputAst {
+      const {
+        image: lValue,
+        startOffset: lStartOffset,
+        startLine: lStartLine,
+        startColumn: lStartColumn,
+        endOffset: lEndOffset,
+        endLine: lEndLine,
+        endColumn: lEndColumn,
+      } = ctx.anyValue[0]!;
+      const {
+        image: rValue,
+        startOffset: rStartOffset,
+        startLine: rStartLine,
+        startColumn: rStartColumn,
+        endOffset: rEndOffset,
+        endLine: rEndLine,
+        endColumn: rEndColumn,
+      } = ctx.anyValue[1]!;
+
       if (!keyword) {
-        // TODO: searcy by all valid keywords
-        return {
-          type: 'AND',
-          children: [],
-        };
+        this.addError({
+          message: 'global range search is not allowed',
+          startOffset: lStartOffset,
+          startLine: lStartLine,
+          startColumn: lStartColumn,
+          endOffset: rEndOffset,
+          endLine: rEndLine,
+          endColumn: rEndColumn,
+        });
+        return { type: 'AND', children: [] };
       }
+
       const { transform } = keywords[keyword].config;
-      const lValue = ctx.anyValue[0]!.image;
-      const rValue = ctx.anyValue[1]!.image;
       const lRes = transform(lValue);
       const rRes = transform(rValue);
+      if (!lRes.ok) {
+        this.addError({
+          message: lRes.error.message,
+          startOffset: lStartOffset,
+          startLine: lStartLine,
+          startColumn: lStartColumn,
+          endOffset: lEndOffset,
+          endLine: lEndLine,
+          endColumn: lEndColumn,
+        });
+      }
+      if (!rRes.ok) {
+        this.addError({
+          message: rRes.error.message,
+          startOffset: rStartOffset,
+          startLine: rStartLine,
+          startColumn: rStartColumn,
+          endOffset: rEndOffset,
+          endLine: rEndLine,
+          endColumn: rEndColumn,
+        });
+      }
       if (!lRes.ok || !rRes.ok) {
-        // TODO: add error message here
-        return {
-          type: 'AND',
-          children: [],
-        };
+        return { type: 'AND', children: [] };
       }
 
       return {
@@ -281,20 +322,14 @@ export function createChevrotainCstVisitor<
     ): OutputAst {
       if (!keyword) {
         // TODO: searcy by all valid keywords
-        return {
-          type: 'AND',
-          children: [],
-        };
+        return { type: 'AND', children: [] };
       }
       const { transform } = keywords[keyword].config;
       const value = ctx.anyValue[0]!.image;
       const res = transform(value);
       if (!res.ok) {
         // TODO: add error message here
-        return {
-          type: 'AND',
-          children: [],
-        };
+        return { type: 'AND', children: [] };
       }
 
       return {
