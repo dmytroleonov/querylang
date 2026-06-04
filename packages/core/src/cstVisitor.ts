@@ -38,6 +38,9 @@ export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
   visit: (node: CstNode) => QueryLangCstVisitorResult<TKeywords>;
 };
 
+const ALLOWED_GLOBAL_SEARCHES =
+  'global searches are only allowed with "~" and "="';
+
 export type QueryLangCstVisitorError = {
   startOffset: number;
   startLine: number;
@@ -265,7 +268,7 @@ export function createChevrotainCstVisitor<
 
       if (!keyword) {
         this.addError({
-          message: 'global range search is not allowed',
+          message: ALLOWED_GLOBAL_SEARCHES,
           startOffset: lStartOffset,
           startLine: lStartLine,
           startColumn: lStartColumn,
@@ -320,15 +323,45 @@ export function createChevrotainCstVisitor<
       ctx: RightBoundedRangeCstChildren,
       { keyword }: Param = {},
     ): OutputAst {
+      const {
+        startOffset: rangeStartOffset,
+        startLine: rangeStartLine,
+        startColumn: rangeStartColumn,
+      } = ctx.range[0]!;
+      const {
+        image: value,
+        startOffset: valueStartOffset,
+        startLine: valueStartLine,
+        startColumn: valueStartColumn,
+        endOffset: valueEndOffset,
+        endLine: valueEndLine,
+        endColumn: valueEndColumn,
+      } = ctx.anyValue[0]!;
       if (!keyword) {
-        // TODO: searcy by all valid keywords
+        this.addError({
+          message: ALLOWED_GLOBAL_SEARCHES,
+          startOffset: rangeStartOffset,
+          startLine: rangeStartLine,
+          startColumn: rangeStartColumn,
+          endOffset: valueEndOffset,
+          endLine: valueEndLine,
+          endColumn: valueEndColumn,
+        });
         return { type: 'AND', children: [] };
       }
+
       const { transform } = keywords[keyword].config;
-      const value = ctx.anyValue[0]!.image;
       const res = transform(value);
       if (!res.ok) {
-        // TODO: add error message here
+        this.addError({
+          message: res.error.message,
+          startOffset: valueStartOffset,
+          startLine: valueStartLine,
+          startColumn: valueStartColumn,
+          endOffset: valueEndOffset,
+          endLine: valueEndLine,
+          endColumn: valueEndColumn,
+        });
         return { type: 'AND', children: [] };
       }
 
