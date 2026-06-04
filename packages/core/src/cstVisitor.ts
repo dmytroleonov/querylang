@@ -1,4 +1,3 @@
-import { type } from 'node:os';
 import type { CstNode } from 'chevrotain';
 import type { CreatedKeywords } from '@/createKeywords.js';
 import type {
@@ -17,10 +16,13 @@ import type {
 } from '@/cstVisitor.types.js';
 import type { InternalQlParser } from '@/parser.js';
 import type {
+  AnyKeyword,
+  AnyOpType,
   Ast,
   CreateKeywordInput,
   Expression,
   InferKeywordConfig,
+  KeywordDataType,
   Op,
 } from '@/types.js';
 import { QueryLangError } from './erorr.js';
@@ -48,15 +50,17 @@ export function createChevrotainCstVisitor<
   keywords: CreatedKeywords<TKeywords>,
   parser: InternalQlParser,
 ): QueryLangCstVisitor<TKeywords> {
-  type OutputAst = Expression<InferKeywordConfig<TKeywords>>;
+  type OutputAst = Expression<{ [x: string]: KeywordDataType }>;
   type Param = VisitorParam<TKeywords>;
-  // const stringKeywords: Extract<TKeywords, {type: 'string'}>[];
+  const originalKeywords = {} as CreatedKeywords<{ [kw: string]: AnyKeyword }>;
+  for (const kw in Object.keys(keywords)) {
+    if (keywords[kw]!.originalKeyword === kw) {
+      originalKeywords[kw] = keywords[kw]!;
+    }
+  }
 
   class QlCstVisitor
-    extends parser.getBaseCstVisitorConstructor<
-      VisitorParam<TKeywords>,
-      OutputAst
-    >()
+    extends parser.getBaseCstVisitorConstructor<Param, OutputAst>()
     implements IQueryLangVisitor<Param, OutputAst>
   {
     public errors: QueryLangCstVisitorError[] = [];
@@ -108,7 +112,6 @@ export function createChevrotainCstVisitor<
     }
 
     keywordExpression(ctx: KeywordExpressionCstChildren): OutputAst {
-      // biome-ignore lint/style/noNonNullAssertion: keyword[0] will always be defined
       const keyword = ctx.keyword[0]!.image as Exclude<
         Param['keyword'],
         undefined
@@ -217,7 +220,7 @@ export function createChevrotainCstVisitor<
       return {
         type: 'KEYWORD',
         keyword,
-        value: {
+        op: {
           type: 'GTE',
           value: res.value,
         },
@@ -248,7 +251,7 @@ export function createChevrotainCstVisitor<
       return {
         type: 'KEYWORD',
         keyword,
-        value: {
+        op: {
           type: 'BETWEEN',
           min: lRes.value,
           max: rRes.value,
@@ -300,9 +303,8 @@ export function createChevrotainCstVisitor<
         };
       }
 
-      // biome-ignore lint/style/noNonNullAssertion: we will always have at least one token
       const { image } = ctx.anyValue[0]!;
-      const { transform } = keywords[keyword].config;
+      const { transform, type: keywordType } = keywords[keyword].config;
       const res = transform(image);
       if (!res.ok) {
         // add error message here
@@ -312,11 +314,14 @@ export function createChevrotainCstVisitor<
         };
       }
 
+      let opType: AnyOpType = 'ILIKE';
+      if (keywordType === 'number') {
+        opType = 'EQ';
+      }
+
       const { value } = res;
-      let op: {
-        [K in typeof keyword]: Op<InferKeywordConfig<TKeywords>, K>;
-      }[typeof keyword] = {
-        type: 'ILIKE',
+      let op: Op<{ [key: string]: KeywordDataType }, string> = {
+        type: opType,
         value,
       };
 
@@ -347,8 +352,15 @@ export function createChevrotainCstVisitor<
   return {
     visit: (node) => {
       const ast = cstVisitor.visit(node);
+      if (cstVisitor.errors.length !== 0) {
+        return {
+          ast: { type: 'EMPTY' },
+          errors: cstVisitor.errors,
+        };
+      }
+
       return {
-        ast,
+        ast: ast as QueryLangCstVisitorResult<TKeywords>['ast'],
         errors: cstVisitor.errors,
       };
     },

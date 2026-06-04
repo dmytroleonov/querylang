@@ -197,7 +197,8 @@ export type NotExpression<
   operand: Expression<TConfig, TKeyword>;
 };
 
-export type KeywordTypes = Record<string, number | string | boolean>;
+export type KeywordDataType = number | string | boolean;
+export type KeywordTypes = Record<string, KeywordDataType>;
 
 export type Expression<
   TConfig extends KeywordTypes,
