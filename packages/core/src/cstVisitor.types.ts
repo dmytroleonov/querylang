@@ -1,5 +1,22 @@
 import type { CstNode, ICstVisitor, IToken } from 'chevrotain';
 
+export type IQueryLangToken = Omit<
+  IToken,
+  | 'startOffset'
+  | 'startLine'
+  | 'startColumn'
+  | 'endOffset'
+  | 'endLine'
+  | 'endColumn'
+> & {
+  startOffset: number;
+  startLine: number;
+  startColumn: number;
+  endOffset: number;
+  endLine: number;
+  endColumn: number;
+};
+
 export interface OrExpressionCstNode extends CstNode {
   name: 'orExpression';
   children: OrExpressionCstChildren;
@@ -7,7 +24,7 @@ export interface OrExpressionCstNode extends CstNode {
 
 export type OrExpressionCstChildren = {
   andExpression: AndExpressionCstNode[];
-  or?: IToken[];
+  or?: IQueryLangToken[];
 };
 
 export interface AndExpressionCstNode extends CstNode {
@@ -17,7 +34,7 @@ export interface AndExpressionCstNode extends CstNode {
 
 export type AndExpressionCstChildren = {
   keywordOrAtomicExpression: KeywordOrAtomicExpressionCstNode[];
-  and?: IToken[];
+  and?: IQueryLangToken[];
 };
 
 export interface KeywordOrAtomicExpressionCstNode extends CstNode {
@@ -36,9 +53,9 @@ export interface KeywordExpressionCstNode extends CstNode {
 }
 
 export type KeywordExpressionCstChildren = {
-  not?: IToken[];
-  keyword: IToken[];
-  colon: IToken[];
+  not?: IQueryLangToken[];
+  keyword: IQueryLangToken[];
+  colon: IQueryLangToken[];
   atomicExpression: AtomicExpressionCstNode[];
 };
 
@@ -48,7 +65,7 @@ export interface AtomicExpressionCstNode extends CstNode {
 }
 
 export type AtomicExpressionCstChildren = {
-  not?: IToken[];
+  not?: IQueryLangToken[];
   parenthesisExpression?: ParenthesisExpressionCstNode[];
   rangeExpression?: RangeExpressionCstNode[];
   valueExpression?: ValueExpressionCstNode[];
@@ -60,9 +77,9 @@ export interface ParenthesisExpressionCstNode extends CstNode {
 }
 
 export type ParenthesisExpressionCstChildren = {
-  lParen: IToken[];
+  lParen: IQueryLangToken[];
   orExpression: OrExpressionCstNode[];
-  rParen: IToken[];
+  rParen: IQueryLangToken[];
 };
 
 export interface RangeExpressionCstNode extends CstNode {
@@ -82,8 +99,8 @@ export interface RightBoundedRangeCstNode extends CstNode {
 }
 
 export type RightBoundedRangeCstChildren = {
-  range: IToken[];
-  anyValue: IToken[];
+  range: IQueryLangToken[];
+  anyValue: IQueryLangToken[];
 };
 
 export interface FullRangeCstNode extends CstNode {
@@ -92,8 +109,8 @@ export interface FullRangeCstNode extends CstNode {
 }
 
 export type FullRangeCstChildren = {
-  anyValue: IToken[];
-  range: IToken[];
+  anyValue: IQueryLangToken[];
+  range: IQueryLangToken[];
 };
 
 export interface LeftBoundedRangeCstNode extends CstNode {
@@ -102,8 +119,8 @@ export interface LeftBoundedRangeCstNode extends CstNode {
 }
 
 export type LeftBoundedRangeCstChildren = {
-  anyValue: IToken[];
-  range: IToken[];
+  anyValue: IQueryLangToken[];
+  range: IQueryLangToken[];
 };
 
 export interface ValueExpressionCstNode extends CstNode {
@@ -112,13 +129,13 @@ export interface ValueExpressionCstNode extends CstNode {
 }
 
 export type ValueExpressionCstChildren = {
-  gte?: IToken[];
-  gt?: IToken[];
-  lte?: IToken[];
-  lt?: IToken[];
-  eq?: IToken[];
-  tilde?: IToken[];
-  anyValue: IToken[];
+  gte?: IQueryLangToken[];
+  gt?: IQueryLangToken[];
+  lte?: IQueryLangToken[];
+  lt?: IQueryLangToken[];
+  eq?: IQueryLangToken[];
+  tilde?: IQueryLangToken[];
+  anyValue: IQueryLangToken[];
 };
 
 export interface IQueryLangVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {

@@ -6,7 +6,7 @@ type StringTransformerConfig = {
   max?: number;
 };
 
-function stringTransform({
+export function stringTransform({
   min = 0,
   max,
 }: StringTransformerConfig = {}): TransformFn<'string'> {
@@ -32,7 +32,7 @@ type NumberTransformConfig = {
 
 const NUMBER_REGEX = /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/;
 
-function numberValdiator({
+export function numberTransformer({
   min = Number.MIN_SAFE_INTEGER,
   max = Number.MAX_SAFE_INTEGER,
 }: NumberTransformConfig = {}): TransformFn<'number'> {
@@ -61,7 +61,7 @@ function numberValdiator({
   };
 }
 
-function booleanValidator(): TransformFn<'boolean'> {
+export function booleanTransformer(): TransformFn<'boolean'> {
   return (value) => {
     if (value !== 'true' && value !== 'false') {
       return {
@@ -79,9 +79,9 @@ export function getDefaultTransform(type: DataType): TransformFn<DataType> {
     case 'string':
       return stringTransform();
     case 'number':
-      return numberValdiator();
+      return numberTransformer();
     case 'boolean':
-      return booleanValidator();
+      return booleanTransformer();
     default: {
       throw new QueryLangError(`Unknown data type: "${type satisfies never}"`);
     }

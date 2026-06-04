@@ -1,27 +1,53 @@
 import { describe, expect, it } from 'vitest';
 import { createChevrotainCstVisitor } from '@/cstVisitor.js';
-import { createChevrotainLexer, createLanguage } from '@/lexer.js';
-import { createChevrotainParser } from '@/parser.js';
+import { createQlParser } from '@/parser.js';
 
 describe(createChevrotainCstVisitor, () => {
-  it.fails('should create an AST with a valid input', () => {
-    const language = createLanguage({ kw: { type: 'string' } });
-    const lexer = createChevrotainLexer(language.tokens);
-    const parser = createChevrotainParser(language.tokens);
-    const visitor = createChevrotainCstVisitor(
-      language.keywords,
-      parser.instance,
-    );
-    const { tokens } = lexer.tokenize('asdf');
-    const { node } = parser.parse(tokens);
-    const { ast } = visitor.visit(node);
+  it('should create an AST with a valid input', () => {
+    const parser = createQlParser({ kw: { type: 'string' } });
+    const { ast, errors } = parser.parse('kw:!(search (=dimon | !~serega))');
+    expect(errors.parser).toStrictEqual([]);
+    expect(errors.lexer).toStrictEqual([]);
+    expect(errors.visitor).toStrictEqual([]);
     expect(ast).toStrictEqual({
-      type: 'KEYWORD',
-      keyword: 'kw',
-      value: {
-        op: 'ILIKE',
-        value: 'asdf',
+      operand: {
+        children: [
+          {
+            keyword: 'kw',
+            type: 'KEYWORD',
+            op: {
+              type: 'ILIKE',
+              value: 'search',
+            },
+          },
+          {
+            children: [
+              {
+                keyword: 'kw',
+                type: 'KEYWORD',
+                op: {
+                  type: 'EQ',
+                  value: 'dimon',
+                },
+              },
+              {
+                operand: {
+                  keyword: 'kw',
+                  type: 'KEYWORD',
+                  op: {
+                    type: 'LIKE',
+                    value: 'serega',
+                  },
+                },
+                type: 'NOT',
+              },
+            ],
+            type: 'OR',
+          },
+        ],
+        type: 'AND',
       },
+      type: 'NOT',
     });
   });
 });
