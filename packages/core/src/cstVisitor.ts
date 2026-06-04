@@ -4,6 +4,7 @@ import type {
   AndExpressionCstChildren,
   AtomicExpressionCstChildren,
   FullRangeCstChildren,
+  IQueryLangToken,
   IQueryLangVisitor,
   KeywordExpressionCstChildren,
   KeywordOrAtomicExpressionCstChildren,
@@ -449,38 +450,58 @@ export function createChevrotainCstVisitor<
       { keyword }: VisitorParam<TKeywords> = {},
     ): OutputAst {
       const {
-        image,
-        startOffset,
-        startLine,
-        startColumn,
-        endOffset,
-        endLine,
-        endColumn,
+        image: value,
+        startOffset: valueStartOffset,
+        startLine: valueStartLine,
+        startColumn: valueStartColumn,
+        endOffset: valueEndOffset,
+        endLine: valueEndLine,
+        endColumn: valueEndColumn,
       } = ctx.anyValue[0]!;
       if (!keyword) {
         const children: AnyKeywordExpression[] = [];
-        for (const [kw, { config }] of Object.entries(originalKeywords)) {
-          const res = config.transform(image);
-          if (res.ok) {
-            const expression = this.buildKeywordExpression(ctx, {
-              keyword: kw,
-              type: config.type,
-              value: res.value,
-            });
-            children.push(expression);
-          }
-        }
-
-        if (!children.length) {
+        const tokens = (ctx.gt || ctx.lt || ctx.gte || ctx.lte) as
+          | [IQueryLangToken, ...IQueryLangToken[]]
+          | undefined;
+        if (tokens) {
+          const {
+            startOffset: opStartOffset,
+            startLine: opStartLine,
+            startColumn: opStartColumn,
+          } = tokens[0];
           this.addError({
-            message: "this value can't be used to search by any keywords",
-            startOffset,
-            startLine,
-            startColumn,
-            endOffset,
-            endLine,
-            endColumn,
+            message: ALLOWED_GLOBAL_SEARCHES,
+            startOffset: opStartOffset,
+            startLine: opStartLine,
+            startColumn: opStartColumn,
+            endOffset: valueEndOffset,
+            endLine: valueEndLine,
+            endColumn: valueEndColumn,
           });
+        } else {
+          for (const [kw, { config }] of Object.entries(originalKeywords)) {
+            const res = config.transform(value);
+            if (res.ok) {
+              const expression = this.buildKeywordExpression(ctx, {
+                keyword: kw,
+                type: config.type,
+                value: res.value,
+              });
+              children.push(expression);
+            }
+          }
+
+          if (!children.length) {
+            this.addError({
+              message: "this value can't be used to search by any keywords",
+              startOffset: valueStartOffset,
+              startLine: valueStartLine,
+              startColumn: valueStartColumn,
+              endOffset: valueEndOffset,
+              endLine: valueEndLine,
+              endColumn: valueEndColumn,
+            });
+          }
         }
 
         return {
@@ -490,16 +511,16 @@ export function createChevrotainCstVisitor<
       }
 
       const { transform, type: keywordType } = keywords[keyword].config;
-      const res = transform(image);
+      const res = transform(value);
       if (!res.ok) {
         this.addError({
           message: res.error.message,
-          startOffset,
-          startLine,
-          startColumn,
-          endOffset,
-          endLine,
-          endColumn,
+          startOffset: valueStartOffset,
+          startLine: valueStartLine,
+          startColumn: valueStartColumn,
+          endOffset: valueEndOffset,
+          endLine: valueEndLine,
+          endColumn: valueEndColumn,
         });
         return {
           type: 'AND',
