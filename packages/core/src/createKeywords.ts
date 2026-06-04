@@ -4,6 +4,7 @@ import { QueryLangError } from '@/erorr.js';
 import { getDefaultTransform } from '@/transformer.js';
 import type { AnyKeyword, CreateKeywordInput, TransformFn } from '@/types.js';
 
+// TODO: add separate keywords for true and false
 export const reservedKeywords = ['null'];
 
 const keywordLiteralPattern = /^[_A-Za-z][_A-Za-z0-9]*$/;
