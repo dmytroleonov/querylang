@@ -218,7 +218,7 @@ export function createChevrotainCstVisitor<
         type: 'KEYWORD',
         keyword,
         value: {
-          op: 'GTE',
+          type: 'GTE',
           value: res.value,
         },
       };
@@ -249,7 +249,7 @@ export function createChevrotainCstVisitor<
         type: 'KEYWORD',
         keyword,
         value: {
-          op: 'BETWEEN',
+          type: 'BETWEEN',
           min: lRes.value,
           max: rRes.value,
         },
@@ -281,8 +281,8 @@ export function createChevrotainCstVisitor<
       return {
         type: 'KEYWORD',
         keyword,
-        value: {
-          op: 'LTE',
+        op: {
+          type: 'LTE',
           value: res.value,
         },
       };
@@ -316,28 +316,28 @@ export function createChevrotainCstVisitor<
       let op: {
         [K in typeof keyword]: Op<InferKeywordConfig<TKeywords>, K>;
       }[typeof keyword] = {
-        op: 'ILIKE',
+        type: 'ILIKE',
         value,
       };
 
       if (ctx.eq) {
-        op = { op: 'EQ', value };
+        op = { type: 'EQ', value };
       } else if (ctx.tilde) {
-        op = { op: 'LIKE', value };
+        op = { type: 'LIKE', value };
       } else if (ctx.gt) {
-        op = { op: 'GT', value };
+        op = { type: 'GT', value };
       } else if (ctx.gte) {
-        op = { op: 'GTE', value };
+        op = { type: 'GTE', value };
       } else if (ctx.lt) {
-        op = { op: 'LT', value };
+        op = { type: 'LT', value };
       } else if (ctx.lte) {
-        op = { op: 'LTE', value };
+        op = { type: 'LTE', value };
       }
 
       return {
         type: 'KEYWORD',
         keyword,
-        value: op,
+        op,
       };
     }
   }

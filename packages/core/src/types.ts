@@ -54,7 +54,7 @@ export type InferKeywordConfig<TKeywords extends CreateKeywordInput> = {
         : never;
 };
 
-export type OpMap = {
+export type OpTypeMap = {
   BETWEEN: 'BETWEEN';
   EQ: 'EQ';
   GTE: 'GTE';
@@ -65,13 +65,13 @@ export type OpMap = {
   ILIKE: 'ILIKE';
 };
 
-export type AnyOp = keyof OpMap;
+export type AnyOpType = keyof OpTypeMap;
 
 export type BetweenOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  op: OpMap['BETWEEN'];
+  type: OpTypeMap['BETWEEN'];
   min: TConfig[TKeyword];
   max: TConfig[TKeyword];
 };
@@ -80,7 +80,7 @@ export type EqOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  op: OpMap['EQ'];
+  type: OpTypeMap['EQ'];
   value: TConfig[TKeyword];
 };
 
@@ -88,7 +88,7 @@ export type LtOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  op: OpMap['LT'];
+  type: OpTypeMap['LT'];
   value: TConfig[TKeyword];
 };
 
@@ -96,7 +96,7 @@ export type LteOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  op: OpMap['LTE'];
+  type: OpTypeMap['LTE'];
   value: TConfig[TKeyword];
 };
 
@@ -104,7 +104,7 @@ export type GtOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  op: OpMap['GT'];
+  type: OpTypeMap['GT'];
   value: TConfig[TKeyword];
 };
 
@@ -112,7 +112,7 @@ export type GteOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  op: OpMap['GTE'];
+  type: OpTypeMap['GTE'];
   value: TConfig[TKeyword];
 };
 
@@ -120,7 +120,7 @@ export type ILikeOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  op: OpMap['ILIKE'];
+  type: OpTypeMap['ILIKE'];
   value: TConfig[TKeyword];
 };
 
@@ -128,7 +128,7 @@ export type LikeOp<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  op: OpMap['LIKE'];
+  type: OpTypeMap['LIKE'];
   value: TConfig[TKeyword];
 };
 
@@ -166,23 +166,12 @@ export type Op<TConfig extends KeywordTypes, TKeyword extends keyof TConfig> =
   | GtOp<TConfig, TKeyword>
   | GteOp<TConfig, TKeyword>;
 
-// export type Op<
-//   TConfig extends KeywordTypes,
-//   TKeyword extends keyof TConfig,
-// > = TConfig[TKeyword] extends string
-//   ? StringOp<TConfig, TKeyword>
-//   : TConfig[TKeyword] extends number
-//     ? NumberOp<TConfig, TKeyword>
-//     : TConfig[TKeyword] extends boolean
-//       ? BooleanOp<TConfig, TKeyword>
-//       : never;
-
 export type KeywordExpression<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
   type: 'KEYWORD';
-} & { [K in TKeyword]: { keyword: K; value: Op<TConfig, K> } }[TKeyword];
+} & { [K in TKeyword]: { keyword: K; op: Op<TConfig, K> } }[TKeyword];
 
 export type AndExpression<
   TConfig extends KeywordTypes,

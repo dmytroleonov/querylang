@@ -21,8 +21,8 @@ describe(createChevrotainCstVisitor, () => {
           {
             keyword: 'kw',
             type: 'KEYWORD',
-            value: {
-              op: 'ILIKE',
+            op: {
+              type: 'ILIKE',
               value: 'search',
             },
           },
@@ -31,8 +31,8 @@ describe(createChevrotainCstVisitor, () => {
               {
                 keyword: 'kw',
                 type: 'KEYWORD',
-                value: {
-                  op: 'EQ',
+                op: {
+                  type: 'EQ',
                   value: 'dimon',
                 },
               },
@@ -40,8 +40,8 @@ describe(createChevrotainCstVisitor, () => {
                 operand: {
                   keyword: 'kw',
                   type: 'KEYWORD',
-                  value: {
-                    op: 'LIKE',
+                  op: {
+                    type: 'LIKE',
                     value: 'serega',
                   },
                 },
