@@ -37,6 +37,12 @@ export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
 };
 
 export type QueryLangCstVisitorError = {
+  startOffset: number;
+  startLine: number;
+  startColumn: number;
+  endOffset: number;
+  endLine: number;
+  endColumn: number;
   message: string;
 };
 
@@ -63,11 +69,19 @@ export function createChevrotainCstVisitor<
     extends parser.getBaseCstVisitorConstructor<Param, OutputAst>()
     implements IQueryLangVisitor<Param, OutputAst>
   {
-    public errors: QueryLangCstVisitorError[] = [];
+    private errors: QueryLangCstVisitorError[] = [];
 
     constructor() {
       super();
       this.validateVisitor();
+    }
+
+    private addError(error: QueryLangCstVisitorError): void {
+      this.errors.push(error);
+    }
+
+    public getErrors(): QueryLangCstVisitorError[] {
+      return structuredClone(this.errors);
     }
 
     orExpression(ctx: OrExpressionCstChildren, param?: Param): OutputAst {
@@ -295,6 +309,15 @@ export function createChevrotainCstVisitor<
       ctx: ValueExpressionCstChildren,
       { keyword }: VisitorParam<TKeywords> = {},
     ): OutputAst {
+      const {
+        image,
+        startOffset,
+        startLine,
+        startColumn,
+        endOffset,
+        endLine,
+        endColumn,
+      } = ctx.anyValue[0]!;
       if (!keyword) {
         return {
           type: 'OR',
@@ -303,11 +326,18 @@ export function createChevrotainCstVisitor<
         };
       }
 
-      const { image } = ctx.anyValue[0]!;
       const { transform, type: keywordType } = keywords[keyword].config;
       const res = transform(image);
       if (!res.ok) {
-        // add error message here
+        this.addError({
+          message: res.error.message,
+          startOffset,
+          startLine,
+          startColumn,
+          endOffset,
+          endLine,
+          endColumn,
+        });
         return {
           type: 'AND',
           children: [],
@@ -352,16 +382,17 @@ export function createChevrotainCstVisitor<
   return {
     visit: (node) => {
       const ast = cstVisitor.visit(node);
-      if (cstVisitor.errors.length !== 0) {
+      const errors = cstVisitor.getErrors();
+      if (errors.length) {
         return {
           ast: { type: 'EMPTY' },
-          errors: cstVisitor.errors,
+          errors: errors,
         };
       }
 
       return {
         ast: ast as QueryLangCstVisitorResult<TKeywords>['ast'],
-        errors: cstVisitor.errors,
+        errors: [],
       };
     },
   };
