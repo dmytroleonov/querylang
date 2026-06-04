@@ -1,0 +1,128 @@
+import type { Ast, Expression, KeywordTypes } from '@/types.js';
+import { QueryLangError } from './erorr.js';
+
+export type ToSqlResult = {
+  sql: string;
+  values: unknown[];
+};
+
+type SqlCtx = {
+  values: unknown[];
+};
+
+export function toSql<TConfig extends KeywordTypes>(
+  ast: Ast<TConfig>,
+): ToSqlResult {
+  if (ast.type === 'EMPTY') {
+    return {
+      sql: '1=1',
+      values: [],
+    };
+  }
+  const ctx: SqlCtx = { values: [] };
+
+  const sql = buildExpression(ast, ctx);
+
+  return {
+    sql,
+    values: ctx.values,
+  };
+}
+
+// TODO: handle LIKE and ILIKE for numbers
+function buildExpression<TConfig extends KeywordTypes>(
+  expr: Expression<TConfig>,
+  ctx: SqlCtx,
+): string {
+  const exprType = expr.type;
+
+  switch (exprType) {
+    case 'AND': {
+      if (!expr.children.length) {
+        return '1=1';
+      }
+
+      return expr.children
+        .map((child) => buildExpression(child, ctx))
+        .join(' AND ');
+    }
+
+    case 'OR': {
+      if (!expr.children.length) {
+        return '1=1';
+      }
+
+      const expressions = expr.children.map((child) =>
+        buildExpression(child, ctx),
+      );
+      if (expressions.length === 1) {
+        return expressions[0]!;
+      }
+
+      return `(${expressions.join(' OR ')})`;
+    }
+
+    case 'NOT': {
+      const inner = buildExpression(expr.operand, ctx);
+      return `NOT ${inner}`;
+    }
+
+    case 'KEYWORD': {
+      const opType = expr.op.type;
+
+      switch (opType) {
+        case 'ILIKE': {
+          const idx = ctx.values.push(expr.op.value);
+          const placeholder = `$${idx}`;
+          return `${expr.keyword} ILIKE ${placeholder}`;
+        }
+        case 'LIKE': {
+          const idx = ctx.values.push(expr.op.value);
+          const placeholder = `$${idx}`;
+          return `${expr.keyword} LIKE ${placeholder}`;
+        }
+        case 'BETWEEN': {
+          const lIdx = ctx.values.push(expr.op.min);
+          const rIdx = ctx.values.push(expr.op.max);
+          const lPlaceholder = `$${lIdx}`;
+          const rPlaceholder = `$${rIdx}`;
+          return `${expr.keyword} BETWEEN ${lPlaceholder} AND ${rPlaceholder}`;
+        }
+        case 'EQ': {
+          const idx = ctx.values.push(expr.op.value);
+          const placeholder = `$${idx}`;
+          return `${expr.keyword} = ${placeholder}`;
+        }
+        case 'LT': {
+          const idx = ctx.values.push(expr.op.value);
+          const placeholder = `$${idx}`;
+          return `${expr.keyword} < ${placeholder}`;
+        }
+        case 'LTE': {
+          const idx = ctx.values.push(expr.op.value);
+          const placeholder = `$${idx}`;
+          return `${expr.keyword} <= ${placeholder}`;
+        }
+        case 'GT': {
+          const idx = ctx.values.push(expr.op.value);
+          const placeholder = `$${idx}`;
+          return `${expr.keyword} > ${placeholder}`;
+        }
+        case 'GTE': {
+          const idx = ctx.values.push(expr.op.value);
+          const placeholder = `$${idx}`;
+          return `${expr.keyword} >= ${placeholder}`;
+        }
+        default: {
+          throw new QueryLangError(`Unknown operation type: "${opType}"`);
+        }
+      }
+    }
+
+    default: {
+      throw new QueryLangError(
+        `Unknown expression type: "${exprType satisfies never}"`,
+      );
+    }
+  }
+}

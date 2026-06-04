@@ -171,7 +171,9 @@ export type KeywordExpression<
   TKeyword extends keyof TConfig,
 > = {
   type: 'KEYWORD';
-} & { [K in TKeyword]: { keyword: K; op: Op<TConfig, K> } }[TKeyword];
+} & {
+  [K in TKeyword]: { keyword: Extract<K, string>; op: Op<TConfig, K> };
+}[TKeyword];
 
 export type AndExpression<
   TConfig extends KeywordTypes,
