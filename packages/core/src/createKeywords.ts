@@ -1,8 +1,8 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
 import { Keyword, Value } from '@/builtin.js';
 import { QueryLangError } from '@/erorr.js';
-import type { AnyKeyword, CreateKeywordInput, TransformFn } from '@/types.js';
 import { getDefaultTransform } from '@/transformer.js';
+import type { AnyKeyword, CreateKeywordInput, TransformFn } from '@/types.js';
 
 export const reservedKeywords = ['null'];
 
