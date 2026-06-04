@@ -218,22 +218,46 @@ export function createChevrotainCstVisitor<
       ctx: LeftBoundedRangeCstChildren,
       { keyword }: Param = {},
     ): OutputAst {
+      const {
+        image: value,
+        startOffset: valueStartOffset,
+        startLine: valueStartLine,
+        startColumn: valueStartColumn,
+        endOffset: valueEndOffset,
+        endLine: valueEndLine,
+        endColumn: valueEndColumn,
+      } = ctx.anyValue[0]!;
+      const {
+        endOffset: rangeEndOffset,
+        endLine: rangeEndLine,
+        endColumn: rangeEndColumn,
+      } = ctx.range[0]!;
       if (!keyword) {
-        // TODO: searcy by all valid keywords
-        return {
-          type: 'AND',
-          children: [],
-        };
+        this.addError({
+          message: ALLOWED_GLOBAL_SEARCHES,
+          startOffset: valueStartOffset,
+          startLine: valueStartLine,
+          startColumn: valueStartColumn,
+          endOffset: rangeEndOffset,
+          endLine: rangeEndLine,
+          endColumn: rangeEndColumn,
+        });
+        return { type: 'AND', children: [] };
       }
+
       const { transform } = keywords[keyword].config;
-      const value = ctx.anyValue[0]!.image;
       const res = transform(value);
       if (!res.ok) {
-        // TODO: add error message here
-        return {
-          type: 'AND',
-          children: [],
-        };
+        this.addError({
+          message: res.error.message,
+          startOffset: valueStartOffset,
+          startLine: valueStartLine,
+          startColumn: valueStartColumn,
+          endOffset: valueEndOffset,
+          endLine: valueEndLine,
+          endColumn: valueEndColumn,
+        });
+        return { type: 'AND', children: [] };
       }
 
       return {
