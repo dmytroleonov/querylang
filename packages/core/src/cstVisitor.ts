@@ -1,4 +1,4 @@
-import type { CstNode } from 'chevrotain';
+import { type CstNode, tokenMatcher } from 'chevrotain';
 import type { CreatedKeywords } from '@/createKeywords.js';
 import type {
   AndExpressionCstChildren,
@@ -28,7 +28,9 @@ import type {
   KeywordDataType,
   Op,
 } from '@/types.js';
+import { QuotedValue, Value } from './builtin.js';
 import { QueryLangError } from './erorr.js';
+import { escapeString } from './utils.js';
 
 export type QueryLangCstVisitorResult<TKeywords extends CreateKeywordInput> = {
   errors: QueryLangCstVisitorError[];
@@ -56,7 +58,6 @@ export type VisitorParam<TKeywords extends CreateKeywordInput> = {
   keyword?: Extract<keyof TKeywords, string>;
 };
 
-// TODO: escape strings
 // TODO: handle null values
 
 export function createChevrotainCstVisitor<
@@ -217,19 +218,27 @@ export function createChevrotainCstVisitor<
       throw new QueryLangError('Unreachable');
     }
 
+    private getValueFromToken(token: IQueryLangToken): string {
+      if (tokenMatcher(token, Value) || tokenMatcher(token, QuotedValue)) {
+        return escapeString(token.image);
+      } else {
+        return token.image;
+      }
+    }
+
     leftBoundedRange(
       ctx: LeftBoundedRangeCstChildren,
       { keyword }: Param = {},
     ): OutputAst {
+      const valueToken = ctx.anyValue[0]!;
       const {
-        image: value,
         startOffset: valueStartOffset,
         startLine: valueStartLine,
         startColumn: valueStartColumn,
         endOffset: valueEndOffset,
         endLine: valueEndLine,
         endColumn: valueEndColumn,
-      } = ctx.anyValue[0]!;
+      } = valueToken;
       const {
         endOffset: rangeEndOffset,
         endLine: rangeEndLine,
@@ -248,6 +257,7 @@ export function createChevrotainCstVisitor<
         return { type: 'AND', children: [] };
       }
 
+      const value = this.getValueFromToken(valueToken);
       const { transform } = keywords[keyword].config;
       const res = transform(value);
       if (!res.ok) {
@@ -274,24 +284,24 @@ export function createChevrotainCstVisitor<
     }
 
     fullRange(ctx: FullRangeCstChildren, { keyword }: Param = {}): OutputAst {
+      const lValueToken = ctx.anyValue[0]!;
       const {
-        image: lValue,
         startOffset: lStartOffset,
         startLine: lStartLine,
         startColumn: lStartColumn,
         endOffset: lEndOffset,
         endLine: lEndLine,
         endColumn: lEndColumn,
-      } = ctx.anyValue[0]!;
+      } = lValueToken;
+      const rValueToken = ctx.anyValue[0]!;
       const {
-        image: rValue,
         startOffset: rStartOffset,
         startLine: rStartLine,
         startColumn: rStartColumn,
         endOffset: rEndOffset,
         endLine: rEndLine,
         endColumn: rEndColumn,
-      } = ctx.anyValue[1]!;
+      } = rValueToken;
 
       if (!keyword) {
         this.addError({
@@ -306,6 +316,8 @@ export function createChevrotainCstVisitor<
         return { type: 'AND', children: [] };
       }
 
+      const lValue = this.getValueFromToken(lValueToken);
+      const rValue = this.getValueFromToken(rValueToken);
       const { transform } = keywords[keyword].config;
       const lRes = transform(lValue);
       const rRes = transform(rValue);
@@ -355,15 +367,15 @@ export function createChevrotainCstVisitor<
         startLine: rangeStartLine,
         startColumn: rangeStartColumn,
       } = ctx.range[0]!;
+      const valueToken = ctx.anyValue[0]!;
       const {
-        image: value,
         startOffset: valueStartOffset,
         startLine: valueStartLine,
         startColumn: valueStartColumn,
         endOffset: valueEndOffset,
         endLine: valueEndLine,
         endColumn: valueEndColumn,
-      } = ctx.anyValue[0]!;
+      } = valueToken;
       if (!keyword) {
         this.addError({
           message: ALLOWED_GLOBAL_SEARCHES,
@@ -377,6 +389,7 @@ export function createChevrotainCstVisitor<
         return { type: 'AND', children: [] };
       }
 
+      const value = this.getValueFromToken(valueToken);
       const { transform } = keywords[keyword].config;
       const res = transform(value);
       if (!res.ok) {
@@ -449,15 +462,16 @@ export function createChevrotainCstVisitor<
       ctx: ValueExpressionCstChildren,
       { keyword }: VisitorParam<TKeywords> = {},
     ): OutputAst {
+      const valueToken = ctx.anyValue[0]!;
       const {
-        image: value,
         startOffset: valueStartOffset,
         startLine: valueStartLine,
         startColumn: valueStartColumn,
         endOffset: valueEndOffset,
         endLine: valueEndLine,
         endColumn: valueEndColumn,
-      } = ctx.anyValue[0]!;
+      } = valueToken;
+      const value = this.getValueFromToken(valueToken);
       if (!keyword) {
         const children: AnyPredicateExpression[] = [];
         const tokens = (ctx.gt || ctx.lt || ctx.gte || ctx.lte) as
@@ -504,10 +518,7 @@ export function createChevrotainCstVisitor<
           }
         }
 
-        return {
-          type: 'OR',
-          children,
-        };
+        return { type: 'OR', children };
       }
 
       const { transform, type: keywordType } = keywords[keyword].config;
@@ -522,10 +533,7 @@ export function createChevrotainCstVisitor<
           endLine: valueEndLine,
           endColumn: valueEndColumn,
         });
-        return {
-          type: 'AND',
-          children: [],
-        };
+        return { type: 'AND', children: [] };
       }
 
       return this.buildPredicateExpression(ctx, {
