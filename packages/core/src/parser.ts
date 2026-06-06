@@ -47,6 +47,8 @@ type ParsingStepConfig = {
   allowKeywords?: boolean;
 };
 
+// TODO: handle null values
+
 export class InternalQlParser extends CstParser {
   constructor(tokens: TokenType[]) {
     super(tokens);
