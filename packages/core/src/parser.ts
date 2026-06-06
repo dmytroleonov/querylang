@@ -29,7 +29,7 @@ import {
 } from '@/builtin.js';
 import {
   createChevrotainCstVisitor,
-  type QueryLangCstVisitorError,
+  type QueryLangError,
 } from '@/cstVisitor.js';
 import { createChevrotainLexer, createLanguage } from '@/lexer.js';
 import type { Ast, CreateKeywordInput, InferKeywordConfig } from '@/types.js';
@@ -236,7 +236,7 @@ export type ParserResult<TKeywords extends CreateKeywordInput> = {
   errors: {
     lexer: ILexingError[];
     parser: IRecognitionException[];
-    visitor: QueryLangCstVisitorError[];
+    visitor: QueryLangError[];
   };
 };
 

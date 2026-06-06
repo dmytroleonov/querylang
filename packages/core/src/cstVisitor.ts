@@ -33,7 +33,7 @@ import type {
 import { escapeString } from '@/utils.js';
 
 export type QueryLangCstVisitorResult<TKeywords extends CreateKeywordInput> = {
-  errors: QueryLangCstVisitorError[];
+  errors: QueryLangError[];
   ast: Ast<InferKeywordConfig<TKeywords>>;
 };
 
@@ -44,7 +44,7 @@ export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
 const ALLOWED_GLOBAL_SEARCHES =
   'global searches are only allowed with "~" and "="';
 
-export type QueryLangCstVisitorError = {
+export type QueryLangError = {
   startOffset: number;
   startLine: number;
   startColumn: number;
@@ -77,18 +77,18 @@ export function createChevrotainCstVisitor<
     extends parser.getBaseCstVisitorConstructor<Param, OutputAst>()
     implements IQueryLangVisitor<Param, OutputAst>
   {
-    private errors: QueryLangCstVisitorError[] = [];
+    private errors: QueryLangError[] = [];
 
     constructor() {
       super();
       this.validateVisitor();
     }
 
-    private addError(error: QueryLangCstVisitorError): void {
+    private addError(error: QueryLangError): void {
       this.errors.push(error);
     }
 
-    public getErrors(): QueryLangCstVisitorError[] {
+    public getErrors(): QueryLangError[] {
       return structuredClone(this.errors);
     }
 
