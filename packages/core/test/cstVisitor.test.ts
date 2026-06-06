@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { createChevrotainCstVisitor } from '@/cstVisitor.js';
 import { createQlParser } from '@/parser.js';
 
+// TODO: test null values
+// should only allow null gobally and as keyword value
+// should not allow any modifiers besides = with null
+// should not allow null in ranges
+
 describe(createChevrotainCstVisitor, () => {
   it('should create an AST with a valid input', () => {
     const parser = createQlParser({ kw: { type: 'string' } });
