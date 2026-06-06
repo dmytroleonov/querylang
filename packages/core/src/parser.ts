@@ -237,11 +237,7 @@ export function createChevrotainParser(tokens: TokenType[]): ChevrotainParser {
 
 export type ParserResult<TKeywords extends CreateKeywordInput> = {
   ast: Ast<InferKeywordConfig<TKeywords>>;
-  errors: {
-    lexer: QueryLangError[];
-    parser: QueryLangError[];
-    visitor: QueryLangError[];
-  };
+  errors: QueryLangError[];
 };
 
 export type QlParser<TKeywords extends CreateKeywordInput> = {
@@ -280,11 +276,7 @@ export function createQlParser<TKeywords extends CreateKeywordInput>(
       if (lexerErrors.length) {
         return {
           ast: { type: 'EMPTY' },
-          errors: {
-            lexer: lexerErrors,
-            parser: [],
-            visitor: [],
-          },
+          errors: lexerErrors,
         };
       }
 
@@ -292,11 +284,7 @@ export function createQlParser<TKeywords extends CreateKeywordInput>(
       if (parserErrors.length) {
         return {
           ast: { type: 'EMPTY' },
-          errors: {
-            lexer: [],
-            parser: parserErrors,
-            visitor: [],
-          },
+          errors: parserErrors,
         };
       }
 
@@ -304,21 +292,13 @@ export function createQlParser<TKeywords extends CreateKeywordInput>(
       if (cstVisitorErrors.length) {
         return {
           ast: { type: 'EMPTY' },
-          errors: {
-            lexer: [],
-            parser: [],
-            visitor: cstVisitorErrors,
-          },
+          errors: cstVisitorErrors,
         };
       }
 
       return {
         ast,
-        errors: {
-          lexer: [],
-          parser: [],
-          visitor: [],
-        },
+        errors: [],
       };
     },
   };

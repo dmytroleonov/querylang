@@ -11,9 +11,7 @@ describe(createChevrotainCstVisitor, () => {
   it('should create an AST with a valid input', () => {
     const parser = createQlParser({ kw: { type: 'string' } });
     const { ast, errors } = parser.parse('kw:!(search (=dimon | !~serega))');
-    expect(errors.parser).toStrictEqual([]);
-    expect(errors.lexer).toStrictEqual([]);
-    expect(errors.visitor).toStrictEqual([]);
+    expect(errors).toStrictEqual([]);
     expect(ast).toStrictEqual({
       operand: {
         children: [
