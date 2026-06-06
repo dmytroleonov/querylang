@@ -44,6 +44,16 @@ export type AnyKeyword =
 
 export type CreateKeywordInput = Record<string, AnyKeyword>;
 
+export type QueryLangError = {
+  startOffset: number;
+  startLine: number;
+  startColumn: number;
+  endOffset: number;
+  endLine: number;
+  endColumn: number;
+  message: string;
+};
+
 export type InferKeywordConfig<TKeywords extends CreateKeywordInput> = {
   [K in keyof TKeywords]: TKeywords[K]['type'] extends BooleanKeywordType['type']
     ? boolean

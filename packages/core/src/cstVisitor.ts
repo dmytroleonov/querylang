@@ -29,6 +29,7 @@ import type {
   InferKeywordConfig,
   KeywordDataType,
   Op,
+  QueryLangError,
 } from '@/types.js';
 import { escapeString } from '@/utils.js';
 
@@ -43,16 +44,6 @@ export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
 
 const ALLOWED_GLOBAL_SEARCHES =
   'global searches are only allowed with "~" and "="';
-
-export type QueryLangError = {
-  startOffset: number;
-  startLine: number;
-  startColumn: number;
-  endOffset: number;
-  endLine: number;
-  endColumn: number;
-  message: string;
-};
 
 export type VisitorParam<TKeywords extends CreateKeywordInput> = {
   keyword?: Extract<keyof TKeywords, string>;
