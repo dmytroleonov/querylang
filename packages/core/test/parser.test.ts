@@ -9,7 +9,7 @@ describe(createChevrotainParser, () => {
     const parser = createChevrotainParser(language.tokens);
     expect(parser.instance).toBeInstanceOf(InternalQlParser);
     const { tokens } = lexer.tokenize(
-      ' (asdf1..& ..123 &asdf..asdf2 & ..asdf3 |kw:1| kw:null) & ( kw:!( !asdf & asdf ) ) & asdf ',
+      ' (asdf1..& ..123 &asdf..asdf2 & ..asdf3 |kw:1| kw:null) & ( kw:!( !asdf & asdf ) ) & asdf !=null ',
     );
     const res = parser.parse(tokens);
     expect(res.errors).toHaveLength(0);

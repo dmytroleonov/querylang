@@ -43,7 +43,6 @@ export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
 
 const ALLOWED_GLOBAL_SEARCHES =
   'global searches are only allowed with "~" and "="';
-const NULL_IS_INVALID_IN_RANGES = '"null" cannot be used in range lookups';
 
 export type QueryLangCstVisitorError = {
   startOffset: number;
@@ -229,7 +228,7 @@ export function createChevrotainCstVisitor<
       ctx: LeftBoundedRangeCstChildren,
       { keyword }: Param = {},
     ): OutputAst {
-      const valueToken = ctx.anyValue[0]!;
+      const valueToken = ctx.value[0]!;
       const {
         startOffset: valueStartOffset,
         startLine: valueStartLine,
@@ -252,18 +251,6 @@ export function createChevrotainCstVisitor<
           endOffset: rangeEndOffset,
           endLine: rangeEndLine,
           endColumn: rangeEndColumn,
-        });
-        return { type: 'AND', children: [] };
-      }
-      if (tokenMatcher(valueToken, Null)) {
-        this.addError({
-          message: NULL_IS_INVALID_IN_RANGES,
-          startOffset: valueStartOffset,
-          startLine: valueStartLine,
-          startColumn: valueStartColumn,
-          endOffset: valueEndOffset,
-          endLine: valueEndLine,
-          endColumn: valueEndColumn,
         });
         return { type: 'AND', children: [] };
       }
@@ -295,7 +282,7 @@ export function createChevrotainCstVisitor<
     }
 
     fullRange(ctx: FullRangeCstChildren, { keyword }: Param = {}): OutputAst {
-      const lValueToken = ctx.anyValue[0]!;
+      const lValueToken = ctx.lValue[0]!;
       const {
         startOffset: lStartOffset,
         startLine: lStartLine,
@@ -304,7 +291,7 @@ export function createChevrotainCstVisitor<
         endLine: lEndLine,
         endColumn: lEndColumn,
       } = lValueToken;
-      const rValueToken = ctx.anyValue[0]!;
+      const rValueToken = ctx.rValue[0]!;
       const {
         startOffset: rStartOffset,
         startLine: rStartLine,
@@ -320,31 +307,6 @@ export function createChevrotainCstVisitor<
           startOffset: lStartOffset,
           startLine: lStartLine,
           startColumn: lStartColumn,
-          endOffset: rEndOffset,
-          endLine: rEndLine,
-          endColumn: rEndColumn,
-        });
-        return { type: 'AND', children: [] };
-      }
-
-      if (tokenMatcher(lValueToken, Null)) {
-        this.addError({
-          message: NULL_IS_INVALID_IN_RANGES,
-          startOffset: lStartOffset,
-          startLine: lStartLine,
-          startColumn: lStartColumn,
-          endOffset: lEndOffset,
-          endLine: lEndLine,
-          endColumn: lEndColumn,
-        });
-        return { type: 'AND', children: [] };
-      }
-      if (tokenMatcher(rValueToken, Null)) {
-        this.addError({
-          message: NULL_IS_INVALID_IN_RANGES,
-          startOffset: rStartOffset,
-          startLine: rStartLine,
-          startColumn: rStartColumn,
           endOffset: rEndOffset,
           endLine: rEndLine,
           endColumn: rEndColumn,
@@ -403,7 +365,7 @@ export function createChevrotainCstVisitor<
         startLine: rangeStartLine,
         startColumn: rangeStartColumn,
       } = ctx.range[0]!;
-      const valueToken = ctx.anyValue[0]!;
+      const valueToken = ctx.value[0]!;
       const {
         startOffset: valueStartOffset,
         startLine: valueStartLine,
@@ -418,19 +380,6 @@ export function createChevrotainCstVisitor<
           startOffset: rangeStartOffset,
           startLine: rangeStartLine,
           startColumn: rangeStartColumn,
-          endOffset: valueEndOffset,
-          endLine: valueEndLine,
-          endColumn: valueEndColumn,
-        });
-        return { type: 'AND', children: [] };
-      }
-
-      if (tokenMatcher(valueToken, Null)) {
-        this.addError({
-          message: NULL_IS_INVALID_IN_RANGES,
-          startOffset: valueStartOffset,
-          startLine: valueStartLine,
-          startColumn: valueStartColumn,
           endOffset: valueEndOffset,
           endLine: valueEndLine,
           endColumn: valueEndColumn,
@@ -508,7 +457,7 @@ export function createChevrotainCstVisitor<
     }
 
     private buildGlobalPredicate(ctx: ValueExpressionCstChildren): OutputAst {
-      const valueToken = ctx.anyValue[0]!;
+      const valueToken = ctx.value[0]!;
       const children: AnyPredicateExpression[] = [];
       if (tokenMatcher(valueToken, Null)) {
         for (const kw of Object.keys(originalKeywords)) {
@@ -576,7 +525,7 @@ export function createChevrotainCstVisitor<
         return this.buildGlobalPredicate(ctx);
       }
 
-      const valueToken = ctx.anyValue[0]!;
+      const valueToken = ctx.value[0]!;
       if (tokenMatcher(valueToken, Null)) {
         return {
           type: 'PREDICATE',

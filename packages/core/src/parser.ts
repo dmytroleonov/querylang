@@ -10,7 +10,6 @@ import {
 } from 'chevrotain';
 import {
   And,
-  AnyValue,
   Colon,
   Eq,
   Gt,
@@ -20,10 +19,14 @@ import {
   Lt,
   Lte,
   Not,
+  Null,
+  NumberValue,
   Or,
+  QuotedValue,
   Range,
   RParen,
   Tilde,
+  Value,
   Whitespace,
 } from '@/builtin.js';
 import {
@@ -44,7 +47,7 @@ export type ChevrotainParser = {
 };
 
 type ParsingStepConfig = {
-  allowKeywords?: boolean;
+  isGlobal?: boolean;
 };
 
 // TODO: handle null values
@@ -57,14 +60,16 @@ export class InternalQlParser extends CstParser {
 
   public orExpression = this.RULE(
     'orExpression',
-    ({ allowKeywords = true }: ParsingStepConfig = {}) => {
-      this.SUBRULE(this.andExpression, { ARGS: [{ allowKeywords }] });
+    ({ isGlobal = true }: ParsingStepConfig = {}) => {
+      this.SUBRULE(this.andExpression, { ARGS: [{ isGlobal }] });
       this.MANY(() => {
         this.CONSUME(Or);
         this.OPTION(() => {
           this.CONSUME(Whitespace);
         });
-        this.SUBRULE2(this.andExpression, { ARGS: [{ allowKeywords }] });
+        this.SUBRULE2(this.andExpression, {
+          ARGS: [{ isGlobal }],
+        });
       });
     },
   );
@@ -91,7 +96,7 @@ export class InternalQlParser extends CstParser {
       });
       this.OR([
         {
-          GATE: () => !!config?.allowKeywords,
+          GATE: () => !!config?.isGlobal,
           ALT: () => this.SUBRULE(this.keywordExpression),
         },
         {
@@ -107,7 +112,7 @@ export class InternalQlParser extends CstParser {
     });
     this.CONSUME(Keyword);
     this.CONSUME(Colon);
-    this.SUBRULE(this.atomicExpression, { ARGS: [{ allowKeywords: false }] });
+    this.SUBRULE(this.atomicExpression, { ARGS: [{ isGlobal: false }] });
   });
 
   private atomicExpression = this.RULE(
@@ -175,34 +180,96 @@ export class InternalQlParser extends CstParser {
 
   private rightBoundedRange = this.RULE('rightBoundedRange', () => {
     this.CONSUME(Range);
-    this.CONSUME(AnyValue);
+    this.OR([
+      {
+        ALT: () => this.CONSUME(NumberValue, { LABEL: 'value' }),
+      },
+      {
+        ALT: () => this.CONSUME(Value, { LABEL: 'value' }),
+      },
+      {
+        ALT: () => this.CONSUME(QuotedValue, { LABEL: 'value' }),
+      },
+    ]);
   });
 
   private fullRange = this.RULE('fullRange', () => {
-    this.CONSUME(AnyValue);
+    this.OR([
+      {
+        ALT: () => this.CONSUME(NumberValue, { LABEL: 'lValue' }),
+      },
+      {
+        ALT: () => this.CONSUME(Value, { LABEL: 'lValue' }),
+      },
+      {
+        ALT: () => this.CONSUME(QuotedValue, { LABEL: 'lValue' }),
+      },
+    ]);
     this.CONSUME(Range);
-    this.CONSUME1(AnyValue);
+    this.OR1([
+      {
+        ALT: () => this.CONSUME1(NumberValue, { LABEL: 'rValue' }),
+      },
+      {
+        ALT: () => this.CONSUME1(Value, { LABEL: 'rValue' }),
+      },
+      {
+        ALT: () => this.CONSUME1(QuotedValue, { LABEL: 'rValue' }),
+      },
+    ]);
   });
 
   private leftBoundedRange = this.RULE('leftBoundedRange', () => {
-    this.CONSUME(AnyValue);
+    this.OR([
+      {
+        ALT: () => this.CONSUME(NumberValue, { LABEL: 'value' }),
+      },
+      {
+        ALT: () => this.CONSUME(Value, { LABEL: 'value' }),
+      },
+      {
+        ALT: () => this.CONSUME(QuotedValue, { LABEL: 'value' }),
+      },
+    ]);
     this.CONSUME(Range);
   });
 
   private valueExpression = this.RULE('valueExpression', () => {
-    this.OPTION1({
-      DEF: () => {
-        this.OR1([
-          { ALT: () => this.CONSUME(Gte) },
-          { ALT: () => this.CONSUME(Gt) },
-          { ALT: () => this.CONSUME(Lte) },
-          { ALT: () => this.CONSUME(Lt) },
-          { ALT: () => this.CONSUME(Eq) },
-          { ALT: () => this.CONSUME(Tilde) },
-        ]);
+    this.OR([
+      {
+        ALT: () => {
+          this.OPTION({ DEF: () => this.CONSUME(Eq) });
+          this.CONSUME(Null);
+        },
       },
-    });
-    this.CONSUME(AnyValue);
+      {
+        ALT: () => {
+          this.OPTION1({
+            DEF: () => {
+              this.OR1([
+                { ALT: () => this.CONSUME(Gte) },
+                { ALT: () => this.CONSUME(Gt) },
+                { ALT: () => this.CONSUME(Lte) },
+                { ALT: () => this.CONSUME(Lt) },
+                { ALT: () => this.CONSUME1(Eq) },
+                { ALT: () => this.CONSUME(Tilde) },
+              ]);
+            },
+          });
+          this.OR2([
+            {
+              ALT: () => this.CONSUME(NumberValue, { LABEL: 'value' }),
+            },
+            {
+              ALT: () => this.CONSUME(Value, { LABEL: 'value' }),
+            },
+            {
+              ALT: () => this.CONSUME(QuotedValue, { LABEL: 'value' }),
+            },
+          ]);
+        },
+      },
+    ]);
   });
 }
 
