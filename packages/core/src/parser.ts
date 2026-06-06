@@ -2,7 +2,6 @@ import {
   type CstNode,
   CstParser,
   EOF,
-  type ILexingError,
   type IRecognitionException,
   type IToken,
   type TokenType,
@@ -236,7 +235,7 @@ export function createChevrotainParser(tokens: TokenType[]): ChevrotainParser {
 export type ParserResult<TKeywords extends CreateKeywordInput> = {
   ast: Ast<InferKeywordConfig<TKeywords>>;
   errors: {
-    lexer: ILexingError[];
+    lexer: QueryLangError[];
     parser: IRecognitionException[];
     visitor: QueryLangError[];
   };

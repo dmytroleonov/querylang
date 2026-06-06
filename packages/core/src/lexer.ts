@@ -1,4 +1,9 @@
-import { type ILexingResult, Lexer, type TokenType } from 'chevrotain';
+import {
+  type ILexingError,
+  type IToken,
+  Lexer,
+  type TokenType,
+} from 'chevrotain';
 import {
   And,
   AnyValue,
@@ -23,10 +28,15 @@ import {
   Whitespace,
 } from '@/builtin.js';
 import { type CreatedKeywords, createKeywords } from '@/createKeywords.js';
-import type { CreateKeywordInput } from '@/types.js';
+import type { CreateKeywordInput, QueryLangError } from '@/types.js';
+
+export type LexingResult = {
+  errors: QueryLangError[];
+  tokens: IToken[];
+};
 
 export type ChevrotainLexer = {
-  tokenize: (input: string) => ILexingResult;
+  tokenize: (input: string) => LexingResult;
 };
 
 // Tokens should be soreted in a reverse alphabetical order
@@ -94,6 +104,18 @@ export function createLanguage<TKeywords extends CreateKeywordInput>(
   };
 }
 
+function lexingErrorToQueryLangError(error: ILexingError): QueryLangError {
+  return {
+    message: error.message,
+    startOffset: error.offset,
+    startLine: error.line!,
+    startColumn: error.column!,
+    endOffset: error.offset! + error.length - 1,
+    endLine: error.line!,
+    endColumn: error.column!,
+  };
+}
+
 export function createChevrotainLexer(tokens: TokenType[]): ChevrotainLexer {
   const chevrotainLexer = new Lexer(tokens, {
     recoveryEnabled: false,
@@ -109,7 +131,13 @@ export function createChevrotainLexer(tokens: TokenType[]): ChevrotainLexer {
 
   return {
     tokenize: (input) => {
-      return chevrotainLexer.tokenize(input);
+      const { errors, tokens } = chevrotainLexer.tokenize(input);
+      const queryLangErrors = errors.map(lexingErrorToQueryLangError);
+
+      return {
+        errors: queryLangErrors,
+        tokens,
+      };
     },
   };
 }
