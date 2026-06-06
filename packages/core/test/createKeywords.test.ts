@@ -8,14 +8,14 @@ import {
   reservedKeywords,
   validateKeyword,
 } from '@/createKeywords.js';
-import { QueryLangError } from '@/erorr.js';
+import { QueryLangException } from '@/erorr.js';
 import type { TransformFn } from '@/types.js';
 
 describe(validateKeyword, () => {
   it.each(
     reservedKeywords,
   )("rejects reserved keyword: validateKeyword('%s') => SearchQlError", (reservedKeyword) => {
-    expect(() => validateKeyword(reservedKeyword)).toThrow(QueryLangError);
+    expect(() => validateKeyword(reservedKeyword)).toThrow(QueryLangException);
   });
 
   it.each([
@@ -25,7 +25,7 @@ describe(validateKeyword, () => {
     '\n',
     'with a space',
   ])("rejects keywords that do not match keyword pattern: validateKeyword('%s') => SearchQlError", (invalidKeyword) => {
-    expect(() => validateKeyword(invalidKeyword)).toThrow(QueryLangError);
+    expect(() => validateKeyword(invalidKeyword)).toThrow(QueryLangException);
   });
 
   it.each([
@@ -90,20 +90,20 @@ describe(createKeywordToken, () => {
 describe(createKeywords, () => {
   it('rejects invalid keywords', () => {
     expect(() => createKeywords({ '': { type: 'string' } })).toThrow(
-      QueryLangError,
+      QueryLangException,
     );
   });
 
   it('rejects invalid alias', () => {
     expect(() =>
       createKeywords({ asdf: { type: 'string', aliases: { '': true } } }),
-    ).toThrow(QueryLangError);
+    ).toThrow(QueryLangException);
   });
 
   it('rejects alias that duplicates keyword', () => {
     expect(() =>
       createKeywords({ asdf: { type: 'string', aliases: { asdf: true } } }),
-    ).toThrow(QueryLangError);
+    ).toThrow(QueryLangException);
   });
 
   it('rejects duplicate alias', () => {
@@ -112,7 +112,7 @@ describe(createKeywords, () => {
         keyword1: { type: 'string', aliases: { alias1: true } },
         keyword2: { type: 'string', aliases: { alias1: true } },
       }),
-    ).toThrow(QueryLangError);
+    ).toThrow(QueryLangException);
   });
 
   it('creates a token for every keyword and alias', () => {

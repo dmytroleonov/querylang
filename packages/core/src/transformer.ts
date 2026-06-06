@@ -1,4 +1,4 @@
-import { QueryLangError } from '@/erorr.js';
+import { QueryLangException } from '@/erorr.js';
 import type { DataType, TransformFn } from '@/types.js';
 
 type StringTransformerConfig = {
@@ -83,7 +83,9 @@ export function getDefaultTransform(type: DataType): TransformFn<DataType> {
     case 'boolean':
       return booleanTransformer();
     default: {
-      throw new QueryLangError(`Unknown data type: "${type satisfies never}"`);
+      throw new QueryLangException(
+        `Unknown data type: "${type satisfies never}"`,
+      );
     }
   }
 }

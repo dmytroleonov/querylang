@@ -16,7 +16,7 @@ import type {
   RightBoundedRangeCstChildren,
   ValueExpressionCstChildren,
 } from '@/cstVisitor.types.js';
-import { QueryLangError } from '@/erorr.js';
+import { QueryLangException } from '@/erorr.js';
 import type { InternalQlParser } from '@/parser.js';
 import type {
   AnyKeyword,
@@ -29,11 +29,12 @@ import type {
   InferKeywordConfig,
   KeywordDataType,
   Op,
+  QueryLangError,
 } from '@/types.js';
 import { escapeString } from '@/utils.js';
 
 export type QueryLangCstVisitorResult<TKeywords extends CreateKeywordInput> = {
-  errors: QueryLangCstVisitorError[];
+  errors: QueryLangError[];
   ast: Ast<InferKeywordConfig<TKeywords>>;
 };
 
@@ -43,16 +44,6 @@ export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
 
 const ALLOWED_GLOBAL_SEARCHES =
   'global searches are only allowed with "~" and "="';
-
-export type QueryLangCstVisitorError = {
-  startOffset: number;
-  startLine: number;
-  startColumn: number;
-  endOffset: number;
-  endLine: number;
-  endColumn: number;
-  message: string;
-};
 
 export type VisitorParam<TKeywords extends CreateKeywordInput> = {
   keyword?: Extract<keyof TKeywords, string>;
@@ -77,18 +68,18 @@ export function createChevrotainCstVisitor<
     extends parser.getBaseCstVisitorConstructor<Param, OutputAst>()
     implements IQueryLangVisitor<Param, OutputAst>
   {
-    private errors: QueryLangCstVisitorError[] = [];
+    private errors: QueryLangError[] = [];
 
     constructor() {
       super();
       this.validateVisitor();
     }
 
-    private addError(error: QueryLangCstVisitorError): void {
+    private addError(error: QueryLangError): void {
       this.errors.push(error);
     }
 
-    public getErrors(): QueryLangCstVisitorError[] {
+    public getErrors(): QueryLangError[] {
       return structuredClone(this.errors);
     }
 
@@ -129,7 +120,7 @@ export function createChevrotainCstVisitor<
         return this.visit(ctx.atomicExpression, param);
       }
 
-      throw new QueryLangError('Unreachable');
+      throw new QueryLangException('Unreachable');
     }
 
     keywordExpression(ctx: KeywordExpressionCstChildren): OutputAst {
@@ -192,7 +183,7 @@ export function createChevrotainCstVisitor<
         return expression;
       }
 
-      throw new QueryLangError('Unreachable');
+      throw new QueryLangException('Unreachable');
     }
 
     parenthesisExpression(
@@ -213,7 +204,7 @@ export function createChevrotainCstVisitor<
         return this.visit(ctx.rightBoundedRange, param);
       }
 
-      throw new QueryLangError('Unreachable');
+      throw new QueryLangException('Unreachable');
     }
 
     private getValueFromToken(token: IQueryLangToken): string {

@@ -1,4 +1,4 @@
-export class QueryLangError extends Error {
+export class QueryLangException extends Error {
   override name = 'QueryLangError';
 
   constructor(message: string) {

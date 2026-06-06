@@ -1,6 +1,6 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
 import { Keyword, Value } from '@/builtin.js';
-import { QueryLangError } from '@/erorr.js';
+import { QueryLangException } from '@/erorr.js';
 import { getDefaultTransform } from '@/transformer.js';
 import type { AnyKeyword, CreateKeywordInput, TransformFn } from '@/types.js';
 
@@ -11,12 +11,12 @@ const keywordLiteralPattern = /^[_A-Za-z][_A-Za-z0-9]*$/;
 
 export function validateKeyword(keywordLiteral: string): void {
   if (reservedKeywords.includes(keywordLiteral)) {
-    throw new QueryLangError(
+    throw new QueryLangException(
       `'${keywordLiteral}' is a reserved keyword and cannot be used as an identifier`,
     );
   }
   if (!keywordLiteralPattern.test(keywordLiteral)) {
-    throw new QueryLangError(
+    throw new QueryLangException(
       `'${keywordLiteral}' is not a valid keyword. Keyword litrals should match the following pattern: '${keywordLiteralPattern}'`,
     );
   }
@@ -128,7 +128,7 @@ export function createKeywords<TKeywords extends CreateKeywordInput>(
       validateKeyword(alias);
       if (aliasMap.has(alias)) {
         const existingKeywordLiteral = aliasMap.get(alias);
-        throw new QueryLangError(
+        throw new QueryLangException(
           `duplicate alias '${alias}' found both in '${existingKeywordLiteral}' and '${keywordLiteral}`,
         );
       }
@@ -137,7 +137,7 @@ export function createKeywords<TKeywords extends CreateKeywordInput>(
 
     for (const [alias, keywordLiteral] of aliasMap.entries()) {
       if (keywordSet.has(alias)) {
-        throw new QueryLangError(
+        throw new QueryLangException(
           `alias '${alias}' of keyword '${keywordLiteral}' duplicates keyword '${alias}'`,
         );
       }

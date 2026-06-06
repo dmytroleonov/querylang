@@ -2,7 +2,6 @@ import {
   type CstNode,
   CstParser,
   EOF,
-  type ILexingError,
   type IRecognitionException,
   type IToken,
   type TokenType,
@@ -27,16 +26,18 @@ import {
   Tilde,
   Whitespace,
 } from '@/builtin.js';
-import {
-  createChevrotainCstVisitor,
-  type QueryLangCstVisitorError,
-} from '@/cstVisitor.js';
+import { createChevrotainCstVisitor } from '@/cstVisitor.js';
 import { createChevrotainLexer, createLanguage } from '@/lexer.js';
-import type { Ast, CreateKeywordInput, InferKeywordConfig } from '@/types.js';
+import type {
+  Ast,
+  CreateKeywordInput,
+  InferKeywordConfig,
+  QueryLangError,
+} from '@/types.js';
 
 export type ChevrotainParserResult = {
   node: CstNode;
-  errors: IRecognitionException[];
+  errors: QueryLangError[];
 };
 
 export type ChevrotainParser = {
@@ -226,23 +227,37 @@ export function createChevrotainParser(tokens: TokenType[]): ChevrotainParser {
     instance: parser,
     parse: (input) => {
       parser.input = input;
-      return { node: parser.orExpression(), errors: parser.errors };
+      const node = parser.orExpression();
+      const errors = parser.errors.map(parsingErrorToQueryLangError);
+
+      return { node, errors };
     },
   };
 }
 
 export type ParserResult<TKeywords extends CreateKeywordInput> = {
   ast: Ast<InferKeywordConfig<TKeywords>>;
-  errors: {
-    lexer: ILexingError[];
-    parser: IRecognitionException[];
-    visitor: QueryLangCstVisitorError[];
-  };
+  errors: QueryLangError[];
 };
 
 export type QlParser<TKeywords extends CreateKeywordInput> = {
   parse: (input: string) => ParserResult<TKeywords>;
 };
+
+function parsingErrorToQueryLangError(
+  error: IRecognitionException,
+): QueryLangError {
+  const { token } = error;
+  return {
+    message: `unexpected token "${token.image}"`,
+    startOffset: token.startOffset,
+    startLine: token.startLine!,
+    startColumn: token.startColumn!,
+    endOffset: token.endOffset!,
+    endLine: token.endLine!,
+    endColumn: token.endColumn!,
+  };
+}
 
 export function createQlParser<TKeywords extends CreateKeywordInput>(
   keywords: TKeywords,
@@ -261,11 +276,7 @@ export function createQlParser<TKeywords extends CreateKeywordInput>(
       if (lexerErrors.length) {
         return {
           ast: { type: 'EMPTY' },
-          errors: {
-            lexer: lexerErrors,
-            parser: [],
-            visitor: [],
-          },
+          errors: lexerErrors,
         };
       }
 
@@ -273,11 +284,7 @@ export function createQlParser<TKeywords extends CreateKeywordInput>(
       if (parserErrors.length) {
         return {
           ast: { type: 'EMPTY' },
-          errors: {
-            lexer: [],
-            parser: parserErrors,
-            visitor: [],
-          },
+          errors: parserErrors,
         };
       }
 
@@ -285,21 +292,13 @@ export function createQlParser<TKeywords extends CreateKeywordInput>(
       if (cstVisitorErrors.length) {
         return {
           ast: { type: 'EMPTY' },
-          errors: {
-            lexer: [],
-            parser: [],
-            visitor: cstVisitorErrors,
-          },
+          errors: cstVisitorErrors,
         };
       }
 
       return {
         ast,
-        errors: {
-          lexer: [],
-          parser: [],
-          visitor: [],
-        },
+        errors: [],
       };
     },
   };
