@@ -147,7 +147,22 @@ export type LikeOp<
   value: TConfig[TKeyword];
 };
 
-export type Op<TConfig extends KeywordTypes, TKeyword extends keyof TConfig> =
+export type NumberOp<
+  TConfig extends KeywordTypes,
+  TKeyword extends keyof TConfig,
+> =
+  | BetweenOp<TConfig, TKeyword>
+  | EqOp<TConfig, TKeyword>
+  | LtOp<TConfig, TKeyword>
+  | LteOp<TConfig, TKeyword>
+  | GtOp<TConfig, TKeyword>
+  | GteOp<TConfig, TKeyword>
+  | IsNullOp;
+
+export type StringOp<
+  TConfig extends KeywordTypes,
+  TKeyword extends keyof TConfig,
+> =
   | ILikeOp<TConfig, TKeyword>
   | LikeOp<TConfig, TKeyword>
   | BetweenOp<TConfig, TKeyword>
@@ -157,6 +172,33 @@ export type Op<TConfig extends KeywordTypes, TKeyword extends keyof TConfig> =
   | GtOp<TConfig, TKeyword>
   | GteOp<TConfig, TKeyword>
   | IsNullOp;
+
+export type BooleanOp<
+  TConfig extends KeywordTypes,
+  TKeyword extends keyof TConfig,
+> = EqOp<TConfig, TKeyword> | IsNullOp;
+
+export type Op<
+  TConfig extends KeywordTypes,
+  TKeyword extends keyof TConfig,
+> = boolean extends TConfig[TKeyword]
+  ? BooleanOp<TConfig, TKeyword>
+  : number extends TConfig[TKeyword]
+    ? NumberOp<TConfig, TKeyword>
+    : string extends TConfig[TKeyword]
+      ? StringOp<TConfig, TKeyword>
+      : never;
+
+// export type Op<TConfig extends KeywordTypes, TKeyword extends keyof TConfig> =
+//   | ILikeOp<TConfig, TKeyword>
+//   | LikeOp<TConfig, TKeyword>
+//   | BetweenOp<TConfig, TKeyword>
+//   | EqOp<TConfig, TKeyword>
+//   | LtOp<TConfig, TKeyword>
+//   | LteOp<TConfig, TKeyword>
+//   | GtOp<TConfig, TKeyword>
+//   | GteOp<TConfig, TKeyword>
+//   | IsNullOp;
 
 export type PredicateExpression<
   TConfig extends KeywordTypes,

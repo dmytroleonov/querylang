@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: todo better types
 import { type CstNode, tokenMatcher } from 'chevrotain';
 import { Null, QuotedValue, Value } from '@/builtin.js';
 import type { CreatedKeywords } from '@/createKeywords.js';
@@ -269,7 +270,7 @@ export function createChevrotainCstVisitor<
           type: 'GTE',
           value: res.value,
         },
-      };
+      } as any;
     }
 
     fullRange(ctx: FullRangeCstChildren, { keyword }: Param = {}): OutputAst {
@@ -344,7 +345,7 @@ export function createChevrotainCstVisitor<
           min: lRes.value,
           max: rRes.value,
         },
-      };
+      } as any;
     }
 
     rightBoundedRange(
@@ -401,7 +402,7 @@ export function createChevrotainCstVisitor<
           type: 'LTE',
           value: res.value,
         },
-      };
+      } as any;
     }
 
     private buildPredicateExpression(
@@ -424,20 +425,20 @@ export function createChevrotainCstVisitor<
       let op: Op<{ [key: string]: KeywordDataType }, string> = {
         type: opType,
         value,
-      };
+      } as any;
 
       if (ctx.eq) {
-        op = { type: 'EQ', value };
+        op = { type: 'EQ', value } as any;
       } else if (ctx.tilde) {
-        op = { type: 'LIKE', value };
+        op = { type: 'LIKE', value } as any;
       } else if (ctx.gt) {
-        op = { type: 'GT', value };
+        op = { type: 'GT', value } as any;
       } else if (ctx.gte) {
-        op = { type: 'GTE', value };
+        op = { type: 'GTE', value } as any;
       } else if (ctx.lt) {
-        op = { type: 'LT', value };
+        op = { type: 'LT', value } as any;
       } else if (ctx.lte) {
-        op = { type: 'LTE', value };
+        op = { type: 'LTE', value } as any;
       }
 
       return {
