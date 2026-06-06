@@ -18,15 +18,13 @@ import {
   LParen,
   Lt,
   Lte,
+  NonNullValue,
   Not,
   Null,
-  NumberValue,
   Or,
-  QuotedValue,
   Range,
   RParen,
   Tilde,
-  Value,
   Whitespace,
 } from '@/builtin.js';
 import {
@@ -49,8 +47,6 @@ export type ChevrotainParser = {
 type ParsingStepConfig = {
   isGlobal?: boolean;
 };
-
-// TODO: handle null values
 
 export class InternalQlParser extends CstParser {
   constructor(tokens: TokenType[]) {
@@ -180,57 +176,17 @@ export class InternalQlParser extends CstParser {
 
   private rightBoundedRange = this.RULE('rightBoundedRange', () => {
     this.CONSUME(Range);
-    this.OR([
-      {
-        ALT: () => this.CONSUME(NumberValue, { LABEL: 'value' }),
-      },
-      {
-        ALT: () => this.CONSUME(Value, { LABEL: 'value' }),
-      },
-      {
-        ALT: () => this.CONSUME(QuotedValue, { LABEL: 'value' }),
-      },
-    ]);
+    this.CONSUME(NonNullValue, { LABEL: 'value' });
   });
 
   private fullRange = this.RULE('fullRange', () => {
-    this.OR([
-      {
-        ALT: () => this.CONSUME(NumberValue, { LABEL: 'lValue' }),
-      },
-      {
-        ALT: () => this.CONSUME(Value, { LABEL: 'lValue' }),
-      },
-      {
-        ALT: () => this.CONSUME(QuotedValue, { LABEL: 'lValue' }),
-      },
-    ]);
+    this.CONSUME(NonNullValue, { LABEL: 'lValue' });
     this.CONSUME(Range);
-    this.OR1([
-      {
-        ALT: () => this.CONSUME1(NumberValue, { LABEL: 'rValue' }),
-      },
-      {
-        ALT: () => this.CONSUME1(Value, { LABEL: 'rValue' }),
-      },
-      {
-        ALT: () => this.CONSUME1(QuotedValue, { LABEL: 'rValue' }),
-      },
-    ]);
+    this.CONSUME1(NonNullValue, { LABEL: 'rValue' });
   });
 
   private leftBoundedRange = this.RULE('leftBoundedRange', () => {
-    this.OR([
-      {
-        ALT: () => this.CONSUME(NumberValue, { LABEL: 'value' }),
-      },
-      {
-        ALT: () => this.CONSUME(Value, { LABEL: 'value' }),
-      },
-      {
-        ALT: () => this.CONSUME(QuotedValue, { LABEL: 'value' }),
-      },
-    ]);
+    this.CONSUME(NonNullValue, { LABEL: 'value' });
     this.CONSUME(Range);
   });
 
@@ -256,17 +212,7 @@ export class InternalQlParser extends CstParser {
               ]);
             },
           });
-          this.OR2([
-            {
-              ALT: () => this.CONSUME(NumberValue, { LABEL: 'value' }),
-            },
-            {
-              ALT: () => this.CONSUME(Value, { LABEL: 'value' }),
-            },
-            {
-              ALT: () => this.CONSUME(QuotedValue, { LABEL: 'value' }),
-            },
-          ]);
+          this.CONSUME(NonNullValue, { LABEL: 'value' });
         },
       },
     ]);

@@ -62,7 +62,7 @@ describe(createLanguage, () => {
       kw: { config: { type: 'string' } },
       keyword: { config: { type: 'string' } },
     });
-    expect(language.tokens).toHaveLength(22);
+    expect(language.tokens).toHaveLength(23);
   });
 });
 
