@@ -10,7 +10,7 @@ describe(toSql, () => {
 
     expect(
       toSql({
-        type: 'KEYWORD',
+        type: 'PREDICATE',
         keyword: 'asdf',
         op: { type: 'LIKE', value: 'somevalue' },
       }),
@@ -24,14 +24,14 @@ describe(toSql, () => {
         type: 'AND',
         children: [
           {
-            type: 'KEYWORD',
+            type: 'PREDICATE',
             keyword: 'asdf',
             op: { type: 'LIKE', value: 'somevalue' },
           },
           {
             type: 'NOT',
             operand: {
-              type: 'KEYWORD',
+              type: 'PREDICATE',
               keyword: 'otherkw',
               op: { type: 'EQ', value: 1 },
             },
@@ -40,12 +40,12 @@ describe(toSql, () => {
             type: 'OR',
             children: [
               {
-                type: 'KEYWORD',
+                type: 'PREDICATE',
                 keyword: 'otherkw2',
                 op: { type: 'EQ', value: '1' },
               },
               {
-                type: 'KEYWORD',
+                type: 'PREDICATE',
                 keyword: 'otherkw3',
                 op: { type: 'EQ', value: 1 },
               },

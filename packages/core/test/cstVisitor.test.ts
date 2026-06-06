@@ -14,7 +14,7 @@ describe(createChevrotainCstVisitor, () => {
         children: [
           {
             keyword: 'kw',
-            type: 'KEYWORD',
+            type: 'PREDICATE',
             op: {
               type: 'ILIKE',
               value: 'search',
@@ -24,7 +24,7 @@ describe(createChevrotainCstVisitor, () => {
             children: [
               {
                 keyword: 'kw',
-                type: 'KEYWORD',
+                type: 'PREDICATE',
                 op: {
                   type: 'EQ',
                   value: 'dimon',
@@ -33,7 +33,7 @@ describe(createChevrotainCstVisitor, () => {
               {
                 operand: {
                   keyword: 'kw',
-                  type: 'KEYWORD',
+                  type: 'PREDICATE',
                   op: {
                     type: 'LIKE',
                     value: 'serega',

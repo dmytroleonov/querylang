@@ -166,11 +166,11 @@ export type Op<TConfig extends KeywordTypes, TKeyword extends keyof TConfig> =
   | GtOp<TConfig, TKeyword>
   | GteOp<TConfig, TKeyword>;
 
-export type KeywordExpression<
+export type PredicateExpression<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
 > = {
-  type: 'KEYWORD';
+  type: 'PREDICATE';
 } & {
   [K in TKeyword]: { keyword: Extract<K, string>; op: Op<TConfig, K> };
 }[TKeyword];
@@ -201,7 +201,7 @@ export type NotExpression<
 
 export type KeywordDataType = number | string | boolean;
 export type KeywordTypes = Record<string, KeywordDataType>;
-export type AnyKeywordExpression = KeywordExpression<
+export type AnyPredicateExpression = PredicateExpression<
   { [key: string]: KeywordDataType },
   string
 >;
@@ -212,7 +212,7 @@ export type Expression<
 > =
   | OrExpression<TConfig, TKeyword>
   | AndExpression<TConfig, TKeyword>
-  | KeywordExpression<TConfig, TKeyword>
+  | PredicateExpression<TConfig, TKeyword>
   | NotExpression<TConfig, TKeyword>;
 
 export type Empty = { type: 'EMPTY' };

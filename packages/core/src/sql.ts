@@ -67,7 +67,7 @@ function buildExpression<TConfig extends KeywordTypes>(
       return `NOT ${inner}`;
     }
 
-    case 'KEYWORD': {
+    case 'PREDICATE': {
       const opType = expr.op.type;
 
       switch (opType) {

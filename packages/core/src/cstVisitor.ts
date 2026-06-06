@@ -18,8 +18,8 @@ import type {
 import type { InternalQlParser } from '@/parser.js';
 import type {
   AnyKeyword,
-  AnyKeywordExpression,
   AnyOpType,
+  AnyPredicateExpression,
   Ast,
   CreateKeywordInput,
   DataType,
@@ -264,7 +264,7 @@ export function createChevrotainCstVisitor<
       }
 
       return {
-        type: 'KEYWORD',
+        type: 'PREDICATE',
         keyword,
         op: {
           type: 'GTE',
@@ -336,7 +336,7 @@ export function createChevrotainCstVisitor<
       }
 
       return {
-        type: 'KEYWORD',
+        type: 'PREDICATE',
         keyword,
         op: {
           type: 'BETWEEN',
@@ -393,7 +393,7 @@ export function createChevrotainCstVisitor<
       }
 
       return {
-        type: 'KEYWORD',
+        type: 'PREDICATE',
         keyword,
         op: {
           type: 'LTE',
@@ -402,7 +402,7 @@ export function createChevrotainCstVisitor<
       };
     }
 
-    private buildKeywordExpression(
+    private buildPredicateExpression(
       ctx: ValueExpressionCstChildren,
       {
         keyword,
@@ -413,7 +413,7 @@ export function createChevrotainCstVisitor<
         type: DataType;
         value: KeywordDataType;
       },
-    ): AnyKeywordExpression {
+    ): AnyPredicateExpression {
       let opType: AnyOpType = 'ILIKE';
       if (type === 'number') {
         opType = 'EQ';
@@ -439,7 +439,7 @@ export function createChevrotainCstVisitor<
       }
 
       return {
-        type: 'KEYWORD',
+        type: 'PREDICATE',
         keyword,
         op,
       };
@@ -459,7 +459,7 @@ export function createChevrotainCstVisitor<
         endColumn: valueEndColumn,
       } = ctx.anyValue[0]!;
       if (!keyword) {
-        const children: AnyKeywordExpression[] = [];
+        const children: AnyPredicateExpression[] = [];
         const tokens = (ctx.gt || ctx.lt || ctx.gte || ctx.lte) as
           | [IQueryLangToken, ...IQueryLangToken[]]
           | undefined;
@@ -482,7 +482,7 @@ export function createChevrotainCstVisitor<
           for (const [kw, { config }] of Object.entries(originalKeywords)) {
             const res = config.transform(value);
             if (res.ok) {
-              const expression = this.buildKeywordExpression(ctx, {
+              const expression = this.buildPredicateExpression(ctx, {
                 keyword: kw,
                 type: config.type,
                 value: res.value,
@@ -528,7 +528,7 @@ export function createChevrotainCstVisitor<
         };
       }
 
-      return this.buildKeywordExpression(ctx, {
+      return this.buildPredicateExpression(ctx, {
         keyword,
         type: keywordType,
         value: res.value,
