@@ -63,9 +63,14 @@ export type OpTypeMap = {
   LT: 'LT';
   LIKE: 'LIKE';
   ILIKE: 'ILIKE';
+  IS_NULL: 'IS_NULL';
 };
 
 export type AnyOpType = keyof OpTypeMap;
+
+export type IsNullOp = {
+  type: OpTypeMap['IS_NULL'];
+};
 
 export type BetweenOp<
   TConfig extends KeywordTypes,
@@ -132,30 +137,6 @@ export type LikeOp<
   value: TConfig[TKeyword];
 };
 
-export type StringOp<
-  TConfig extends KeywordTypes,
-  TKeyword extends keyof TConfig,
-> =
-  | ILikeOp<TConfig, TKeyword>
-  | LikeOp<TConfig, TKeyword>
-  | EqOp<TConfig, TKeyword>;
-
-export type NumberOp<
-  TConfig extends KeywordTypes,
-  TKeyword extends keyof TConfig,
-> =
-  | BetweenOp<TConfig, TKeyword>
-  | EqOp<TConfig, TKeyword>
-  | LtOp<TConfig, TKeyword>
-  | LteOp<TConfig, TKeyword>
-  | GtOp<TConfig, TKeyword>
-  | GteOp<TConfig, TKeyword>;
-
-export type BooleanOp<
-  TConfig extends KeywordTypes,
-  TKeyword extends keyof TConfig,
-> = EqOp<TConfig, TKeyword>;
-
 export type Op<TConfig extends KeywordTypes, TKeyword extends keyof TConfig> =
   | ILikeOp<TConfig, TKeyword>
   | LikeOp<TConfig, TKeyword>
@@ -164,7 +145,8 @@ export type Op<TConfig extends KeywordTypes, TKeyword extends keyof TConfig> =
   | LtOp<TConfig, TKeyword>
   | LteOp<TConfig, TKeyword>
   | GtOp<TConfig, TKeyword>
-  | GteOp<TConfig, TKeyword>;
+  | GteOp<TConfig, TKeyword>
+  | IsNullOp;
 
 export type PredicateExpression<
   TConfig extends KeywordTypes,

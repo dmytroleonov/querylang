@@ -100,7 +100,7 @@ export interface RightBoundedRangeCstNode extends CstNode {
 
 export type RightBoundedRangeCstChildren = {
   range: IQueryLangToken[];
-  anyValue: IQueryLangToken[];
+  value: IQueryLangToken[];
 };
 
 export interface FullRangeCstNode extends CstNode {
@@ -109,8 +109,9 @@ export interface FullRangeCstNode extends CstNode {
 }
 
 export type FullRangeCstChildren = {
-  anyValue: IQueryLangToken[];
+  lValue: IQueryLangToken[];
   range: IQueryLangToken[];
+  rValue: IQueryLangToken[];
 };
 
 export interface LeftBoundedRangeCstNode extends CstNode {
@@ -119,7 +120,7 @@ export interface LeftBoundedRangeCstNode extends CstNode {
 }
 
 export type LeftBoundedRangeCstChildren = {
-  anyValue: IQueryLangToken[];
+  value: IQueryLangToken[];
   range: IQueryLangToken[];
 };
 
@@ -135,7 +136,7 @@ export type ValueExpressionCstChildren = {
   lt?: IQueryLangToken[];
   eq?: IQueryLangToken[];
   tilde?: IQueryLangToken[];
-  anyValue: IQueryLangToken[];
+  value: IQueryLangToken[];
 };
 
 export interface IQueryLangVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {

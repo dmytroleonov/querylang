@@ -1,4 +1,5 @@
 import { type CstNode, tokenMatcher } from 'chevrotain';
+import { Null, QuotedValue, Value } from '@/builtin.js';
 import type { CreatedKeywords } from '@/createKeywords.js';
 import type {
   AndExpressionCstChildren,
@@ -15,6 +16,7 @@ import type {
   RightBoundedRangeCstChildren,
   ValueExpressionCstChildren,
 } from '@/cstVisitor.types.js';
+import { QueryLangError } from '@/erorr.js';
 import type { InternalQlParser } from '@/parser.js';
 import type {
   AnyKeyword,
@@ -28,9 +30,7 @@ import type {
   KeywordDataType,
   Op,
 } from '@/types.js';
-import { QuotedValue, Value } from './builtin.js';
-import { QueryLangError } from './erorr.js';
-import { escapeString } from './utils.js';
+import { escapeString } from '@/utils.js';
 
 export type QueryLangCstVisitorResult<TKeywords extends CreateKeywordInput> = {
   errors: QueryLangCstVisitorError[];
@@ -57,8 +57,6 @@ export type QueryLangCstVisitorError = {
 export type VisitorParam<TKeywords extends CreateKeywordInput> = {
   keyword?: Extract<keyof TKeywords, string>;
 };
-
-// TODO: handle null values
 
 export function createChevrotainCstVisitor<
   TKeywords extends CreateKeywordInput,
@@ -230,7 +228,7 @@ export function createChevrotainCstVisitor<
       ctx: LeftBoundedRangeCstChildren,
       { keyword }: Param = {},
     ): OutputAst {
-      const valueToken = ctx.anyValue[0]!;
+      const valueToken = ctx.value[0]!;
       const {
         startOffset: valueStartOffset,
         startLine: valueStartLine,
@@ -284,7 +282,7 @@ export function createChevrotainCstVisitor<
     }
 
     fullRange(ctx: FullRangeCstChildren, { keyword }: Param = {}): OutputAst {
-      const lValueToken = ctx.anyValue[0]!;
+      const lValueToken = ctx.lValue[0]!;
       const {
         startOffset: lStartOffset,
         startLine: lStartLine,
@@ -293,7 +291,7 @@ export function createChevrotainCstVisitor<
         endLine: lEndLine,
         endColumn: lEndColumn,
       } = lValueToken;
-      const rValueToken = ctx.anyValue[0]!;
+      const rValueToken = ctx.rValue[0]!;
       const {
         startOffset: rStartOffset,
         startLine: rStartLine,
@@ -367,7 +365,7 @@ export function createChevrotainCstVisitor<
         startLine: rangeStartLine,
         startColumn: rangeStartColumn,
       } = ctx.range[0]!;
-      const valueToken = ctx.anyValue[0]!;
+      const valueToken = ctx.value[0]!;
       const {
         startOffset: valueStartOffset,
         startLine: valueStartLine,
@@ -458,80 +456,98 @@ export function createChevrotainCstVisitor<
       };
     }
 
-    valueExpression(
-      ctx: ValueExpressionCstChildren,
-      { keyword }: VisitorParam<TKeywords> = {},
-    ): OutputAst {
-      const valueToken = ctx.anyValue[0]!;
-      const {
-        startOffset: valueStartOffset,
-        startLine: valueStartLine,
-        startColumn: valueStartColumn,
-        endOffset: valueEndOffset,
-        endLine: valueEndLine,
-        endColumn: valueEndColumn,
-      } = valueToken;
-      const value = this.getValueFromToken(valueToken);
-      if (!keyword) {
-        const children: AnyPredicateExpression[] = [];
-        const tokens = (ctx.gt || ctx.lt || ctx.gte || ctx.lte) as
-          | [IQueryLangToken, ...IQueryLangToken[]]
-          | undefined;
-        if (tokens) {
-          const {
-            startOffset: opStartOffset,
-            startLine: opStartLine,
-            startColumn: opStartColumn,
-          } = tokens[0];
-          this.addError({
-            message: ALLOWED_GLOBAL_SEARCHES,
-            startOffset: opStartOffset,
-            startLine: opStartLine,
-            startColumn: opStartColumn,
-            endOffset: valueEndOffset,
-            endLine: valueEndLine,
-            endColumn: valueEndColumn,
+    private buildGlobalPredicate(ctx: ValueExpressionCstChildren): OutputAst {
+      const valueToken = ctx.value[0]!;
+      const children: AnyPredicateExpression[] = [];
+      if (tokenMatcher(valueToken, Null)) {
+        for (const kw of Object.keys(originalKeywords)) {
+          children.push({
+            type: 'PREDICATE',
+            keyword: kw,
+            op: {
+              type: 'IS_NULL',
+            },
           });
-        } else {
-          for (const [kw, { config }] of Object.entries(originalKeywords)) {
-            const res = config.transform(value);
-            if (res.ok) {
-              const expression = this.buildPredicateExpression(ctx, {
-                keyword: kw,
-                type: config.type,
-                value: res.value,
-              });
-              children.push(expression);
-            }
-          }
-
-          if (!children.length) {
-            this.addError({
-              message: "this value can't be used to search by any keywords",
-              startOffset: valueStartOffset,
-              startLine: valueStartLine,
-              startColumn: valueStartColumn,
-              endOffset: valueEndOffset,
-              endLine: valueEndLine,
-              endColumn: valueEndColumn,
-            });
-          }
         }
 
         return { type: 'OR', children };
       }
 
+      const value = this.getValueFromToken(valueToken);
+      const modifier = (ctx.gt || ctx.lt || ctx.gte || ctx.lte) as
+        | [IQueryLangToken, ...IQueryLangToken[]]
+        | undefined;
+      if (modifier) {
+        const opToken = modifier[0];
+        this.addError({
+          message: ALLOWED_GLOBAL_SEARCHES,
+          startOffset: opToken.startOffset,
+          startLine: opToken.startLine,
+          startColumn: opToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
+        });
+      } else {
+        for (const [kw, { config }] of Object.entries(originalKeywords)) {
+          const res = config.transform(value);
+          if (res.ok) {
+            const expression = this.buildPredicateExpression(ctx, {
+              keyword: kw,
+              type: config.type,
+              value: res.value,
+            });
+            children.push(expression);
+          }
+        }
+
+        if (!children.length) {
+          this.addError({
+            message: "this value can't be used to search by any keywords",
+            startOffset: valueToken.startOffset,
+            startLine: valueToken.startLine,
+            startColumn: valueToken.startColumn,
+            endOffset: valueToken.endOffset,
+            endLine: valueToken.endLine,
+            endColumn: valueToken.endColumn,
+          });
+        }
+      }
+
+      return { type: 'OR', children };
+    }
+
+    valueExpression(
+      ctx: ValueExpressionCstChildren,
+      { keyword }: VisitorParam<TKeywords> = {},
+    ): OutputAst {
+      if (!keyword) {
+        return this.buildGlobalPredicate(ctx);
+      }
+
+      const valueToken = ctx.value[0]!;
+      if (tokenMatcher(valueToken, Null)) {
+        return {
+          type: 'PREDICATE',
+          keyword,
+          op: {
+            type: 'IS_NULL',
+          },
+        };
+      }
+
+      const value = this.getValueFromToken(valueToken);
       const { transform, type: keywordType } = keywords[keyword].config;
       const res = transform(value);
       if (!res.ok) {
         this.addError({
           message: res.error.message,
-          startOffset: valueStartOffset,
-          startLine: valueStartLine,
-          startColumn: valueStartColumn,
-          endOffset: valueEndOffset,
-          endLine: valueEndLine,
-          endColumn: valueEndColumn,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
         });
         return { type: 'AND', children: [] };
       }

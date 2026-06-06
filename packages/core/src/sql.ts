@@ -113,8 +113,13 @@ function buildExpression<TConfig extends KeywordTypes>(
           const placeholder = `$${idx}`;
           return `${expr.keyword} >= ${placeholder}`;
         }
+        case 'IS_NULL': {
+          return `${expr.keyword} IS NULL`;
+        }
         default: {
-          throw new QueryLangError(`Unknown operation type: "${opType}"`);
+          throw new QueryLangError(
+            `Unknown operation type: "${opType satisfies never}"`,
+          );
         }
       }
     }
