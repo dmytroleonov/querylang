@@ -1,5 +1,5 @@
 import type { Ast, Expression, KeywordTypes } from '@/types.js';
-import { QueryLangError } from './erorr.js';
+import { QueryLangException } from './erorr.js';
 
 export type ToSqlResult = {
   sql: string;
@@ -117,7 +117,7 @@ function buildExpression<TConfig extends KeywordTypes>(
           return `${expr.keyword} IS NULL`;
         }
         default: {
-          throw new QueryLangError(
+          throw new QueryLangException(
             `Unknown operation type: "${opType satisfies never}"`,
           );
         }
@@ -125,7 +125,7 @@ function buildExpression<TConfig extends KeywordTypes>(
     }
 
     default: {
-      throw new QueryLangError(
+      throw new QueryLangException(
         `Unknown expression type: "${exprType satisfies never}"`,
       );
     }

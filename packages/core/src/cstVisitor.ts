@@ -16,7 +16,7 @@ import type {
   RightBoundedRangeCstChildren,
   ValueExpressionCstChildren,
 } from '@/cstVisitor.types.js';
-import { QueryLangError } from '@/erorr.js';
+import { QueryLangException } from '@/erorr.js';
 import type { InternalQlParser } from '@/parser.js';
 import type {
   AnyKeyword,
@@ -129,7 +129,7 @@ export function createChevrotainCstVisitor<
         return this.visit(ctx.atomicExpression, param);
       }
 
-      throw new QueryLangError('Unreachable');
+      throw new QueryLangException('Unreachable');
     }
 
     keywordExpression(ctx: KeywordExpressionCstChildren): OutputAst {
@@ -192,7 +192,7 @@ export function createChevrotainCstVisitor<
         return expression;
       }
 
-      throw new QueryLangError('Unreachable');
+      throw new QueryLangException('Unreachable');
     }
 
     parenthesisExpression(
@@ -213,7 +213,7 @@ export function createChevrotainCstVisitor<
         return this.visit(ctx.rightBoundedRange, param);
       }
 
-      throw new QueryLangError('Unreachable');
+      throw new QueryLangException('Unreachable');
     }
 
     private getValueFromToken(token: IQueryLangToken): string {
