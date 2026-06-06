@@ -37,7 +37,7 @@ import type {
 
 export type ChevrotainParserResult = {
   node: CstNode;
-  errors: IRecognitionException[];
+  errors: QueryLangError[];
 };
 
 export type ChevrotainParser = {
@@ -227,7 +227,10 @@ export function createChevrotainParser(tokens: TokenType[]): ChevrotainParser {
     instance: parser,
     parse: (input) => {
       parser.input = input;
-      return { node: parser.orExpression(), errors: parser.errors };
+      const node = parser.orExpression();
+      const errors = parser.errors.map(parsingErrorToQueryLangError);
+
+      return { node, errors };
     },
   };
 }
@@ -236,7 +239,7 @@ export type ParserResult<TKeywords extends CreateKeywordInput> = {
   ast: Ast<InferKeywordConfig<TKeywords>>;
   errors: {
     lexer: QueryLangError[];
-    parser: IRecognitionException[];
+    parser: QueryLangError[];
     visitor: QueryLangError[];
   };
 };
@@ -244,6 +247,21 @@ export type ParserResult<TKeywords extends CreateKeywordInput> = {
 export type QlParser<TKeywords extends CreateKeywordInput> = {
   parse: (input: string) => ParserResult<TKeywords>;
 };
+
+function parsingErrorToQueryLangError(
+  error: IRecognitionException,
+): QueryLangError {
+  const { token } = error;
+  return {
+    message: `unexpected token "${token.image}"`,
+    startOffset: token.startOffset,
+    startLine: token.startLine!,
+    startColumn: token.startColumn!,
+    endOffset: token.endOffset!,
+    endLine: token.endLine!,
+    endColumn: token.endColumn!,
+  };
+}
 
 export function createQlParser<TKeywords extends CreateKeywordInput>(
   keywords: TKeywords,
