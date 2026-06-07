@@ -279,6 +279,15 @@ export function createQlParser<TKeywords extends CreateKeywordInput>(
           errors: lexerErrors,
         };
       }
+      const isInputEmpty =
+        tokens.length === 0 ||
+        (tokens.length === 1 && matchesToken(tokens[0]!, Whitespace));
+      if (isInputEmpty) {
+        return {
+          ast: { type: 'EMPTY' },
+          errors: [],
+        };
+      }
 
       const { node, errors: parserErrors } = parser.parse(tokens);
       if (parserErrors.length) {
