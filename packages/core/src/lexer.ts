@@ -110,7 +110,7 @@ function lexingErrorToQueryLangError(error: ILexingError): QueryLangError {
     startOffset: error.offset,
     startLine: error.line!,
     startColumn: error.column!,
-    endOffset: error.offset! + error.length - 1,
+    endOffset: error.offset! + error.length,
     endLine: error.line!,
     endColumn: error.column!,
   };
