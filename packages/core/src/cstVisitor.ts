@@ -45,6 +45,9 @@ export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
 
 const ALLOWED_GLOBAL_SEARCHES =
   'global searches are only allowed with "~" and "="';
+const NULL_IS_INVALID_IN_RANGES =
+  '->null<- cannot be used in range lookups. Wrap it in single or double quotes \
+to perform a string lookup';
 
 export type VisitorParam<TKeywords extends CreateKeywordInput> = {
   keyword?: Extract<keyof TKeywords, string>;
@@ -221,28 +224,28 @@ export function createChevrotainCstVisitor<
       { keyword }: Param = {},
     ): OutputAst {
       const valueToken = ctx.value[0]!;
-      const {
-        startOffset: valueStartOffset,
-        startLine: valueStartLine,
-        startColumn: valueStartColumn,
-        endOffset: valueEndOffset,
-        endLine: valueEndLine,
-        endColumn: valueEndColumn,
-      } = valueToken;
-      const {
-        endOffset: rangeEndOffset,
-        endLine: rangeEndLine,
-        endColumn: rangeEndColumn,
-      } = ctx.range[0]!;
+      const rangeToken = ctx.range[0]!;
       if (!keyword) {
         this.addError({
           message: ALLOWED_GLOBAL_SEARCHES,
-          startOffset: valueStartOffset,
-          startLine: valueStartLine,
-          startColumn: valueStartColumn,
-          endOffset: rangeEndOffset,
-          endLine: rangeEndLine,
-          endColumn: rangeEndColumn,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: rangeToken.endOffset,
+          endLine: rangeToken.endLine,
+          endColumn: rangeToken.endColumn,
+        });
+        return { type: 'AND', children: [] };
+      }
+      if (matchesToken(valueToken, Null)) {
+        this.addError({
+          message: NULL_IS_INVALID_IN_RANGES,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
         });
         return { type: 'AND', children: [] };
       }
@@ -253,12 +256,12 @@ export function createChevrotainCstVisitor<
       if (!res.ok) {
         this.addError({
           message: res.error.message,
-          startOffset: valueStartOffset,
-          startLine: valueStartLine,
-          startColumn: valueStartColumn,
-          endOffset: valueEndOffset,
-          endLine: valueEndLine,
-          endColumn: valueEndColumn,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
         });
         return { type: 'AND', children: [] };
       }
@@ -275,34 +278,46 @@ export function createChevrotainCstVisitor<
 
     fullRange(ctx: FullRangeCstChildren, { keyword }: Param = {}): OutputAst {
       const lValueToken = ctx.lValue[0]!;
-      const {
-        startOffset: lStartOffset,
-        startLine: lStartLine,
-        startColumn: lStartColumn,
-        endOffset: lEndOffset,
-        endLine: lEndLine,
-        endColumn: lEndColumn,
-      } = lValueToken;
       const rValueToken = ctx.rValue[0]!;
-      const {
-        startOffset: rStartOffset,
-        startLine: rStartLine,
-        startColumn: rStartColumn,
-        endOffset: rEndOffset,
-        endLine: rEndLine,
-        endColumn: rEndColumn,
-      } = rValueToken;
 
       if (!keyword) {
         this.addError({
           message: ALLOWED_GLOBAL_SEARCHES,
-          startOffset: lStartOffset,
-          startLine: lStartLine,
-          startColumn: lStartColumn,
-          endOffset: rEndOffset,
-          endLine: rEndLine,
-          endColumn: rEndColumn,
+          startOffset: lValueToken.startOffset,
+          startLine: lValueToken.startLine,
+          startColumn: lValueToken.startColumn,
+          endOffset: rValueToken.endOffset,
+          endLine: rValueToken.endLine,
+          endColumn: rValueToken.endColumn,
         });
+        return { type: 'AND', children: [] };
+      }
+
+      const isLValueNull = matchesToken(lValueToken, Null);
+      if (isLValueNull) {
+        this.addError({
+          message: NULL_IS_INVALID_IN_RANGES,
+          startOffset: lValueToken.startOffset,
+          startLine: lValueToken.startLine,
+          startColumn: lValueToken.startColumn,
+          endOffset: lValueToken.endOffset,
+          endLine: lValueToken.endLine,
+          endColumn: lValueToken.endColumn,
+        });
+      }
+      const isRValueNull = matchesToken(rValueToken, Null);
+      if (isRValueNull) {
+        this.addError({
+          message: NULL_IS_INVALID_IN_RANGES,
+          startOffset: rValueToken.startOffset,
+          startLine: rValueToken.startLine,
+          startColumn: rValueToken.startColumn,
+          endOffset: rValueToken.endOffset,
+          endLine: rValueToken.endLine,
+          endColumn: rValueToken.endColumn,
+        });
+      }
+      if (isLValueNull || isRValueNull) {
         return { type: 'AND', children: [] };
       }
 
@@ -314,23 +329,23 @@ export function createChevrotainCstVisitor<
       if (!lRes.ok) {
         this.addError({
           message: lRes.error.message,
-          startOffset: lStartOffset,
-          startLine: lStartLine,
-          startColumn: lStartColumn,
-          endOffset: lEndOffset,
-          endLine: lEndLine,
-          endColumn: lEndColumn,
+          startOffset: lValueToken.startOffset,
+          startLine: lValueToken.startLine,
+          startColumn: lValueToken.startColumn,
+          endOffset: lValueToken.endOffset,
+          endLine: lValueToken.endLine,
+          endColumn: lValueToken.endColumn,
         });
       }
       if (!rRes.ok) {
         this.addError({
           message: rRes.error.message,
-          startOffset: rStartOffset,
-          startLine: rStartLine,
-          startColumn: rStartColumn,
-          endOffset: rEndOffset,
-          endLine: rEndLine,
-          endColumn: rEndColumn,
+          startOffset: rValueToken.startOffset,
+          startLine: rValueToken.startLine,
+          startColumn: rValueToken.startColumn,
+          endOffset: rValueToken.endOffset,
+          endLine: rValueToken.endLine,
+          endColumn: rValueToken.endColumn,
         });
       }
       if (!lRes.ok || !rRes.ok) {
@@ -352,29 +367,30 @@ export function createChevrotainCstVisitor<
       ctx: RightBoundedRangeCstChildren,
       { keyword }: Param = {},
     ): OutputAst {
-      const {
-        startOffset: rangeStartOffset,
-        startLine: rangeStartLine,
-        startColumn: rangeStartColumn,
-      } = ctx.range[0]!;
+      const rangeToken = ctx.range[0]!;
       const valueToken = ctx.value[0]!;
-      const {
-        startOffset: valueStartOffset,
-        startLine: valueStartLine,
-        startColumn: valueStartColumn,
-        endOffset: valueEndOffset,
-        endLine: valueEndLine,
-        endColumn: valueEndColumn,
-      } = valueToken;
       if (!keyword) {
         this.addError({
           message: ALLOWED_GLOBAL_SEARCHES,
-          startOffset: rangeStartOffset,
-          startLine: rangeStartLine,
-          startColumn: rangeStartColumn,
-          endOffset: valueEndOffset,
-          endLine: valueEndLine,
-          endColumn: valueEndColumn,
+          startOffset: rangeToken.startOffset,
+          startLine: rangeToken.startLine,
+          startColumn: rangeToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
+        });
+        return { type: 'AND', children: [] };
+      }
+
+      if (matchesToken(valueToken, Null)) {
+        this.addError({
+          message: NULL_IS_INVALID_IN_RANGES,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
         });
         return { type: 'AND', children: [] };
       }
@@ -385,12 +401,12 @@ export function createChevrotainCstVisitor<
       if (!res.ok) {
         this.addError({
           message: res.error.message,
-          startOffset: valueStartOffset,
-          startLine: valueStartLine,
-          startColumn: valueStartColumn,
-          endOffset: valueEndOffset,
-          endLine: valueEndLine,
-          endColumn: valueEndColumn,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
         });
         return { type: 'AND', children: [] };
       }

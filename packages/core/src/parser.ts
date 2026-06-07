@@ -196,7 +196,7 @@ export class InternalQlParser extends CstParser {
       {
         ALT: () => {
           this.OPTION({ DEF: () => this.CONSUME(Eq) });
-          this.CONSUME(Null);
+          this.CONSUME(Null, { LABEL: 'value' });
         },
       },
       {
