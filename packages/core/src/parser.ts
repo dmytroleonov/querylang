@@ -5,7 +5,6 @@ import {
   type IRecognitionException,
   type IToken,
   type TokenType,
-  tokenMatcher,
 } from 'chevrotain';
 import {
   And,
@@ -34,6 +33,7 @@ import type {
   InferKeywordConfig,
   QueryLangError,
 } from '@/types.js';
+import { matchesToken } from '@/utils.js';
 
 export type ChevrotainParserResult = {
   node: CstNode;
@@ -154,9 +154,8 @@ export class InternalQlParser extends CstParser {
   );
 
   private isWhitespaceRequired(): boolean {
-    const wsNotRequiredBefore = [EOF, LParen, RParen, And, Or];
     const nextToken = this.LA(1);
-    return !wsNotRequiredBefore.some((t) => tokenMatcher(nextToken, t));
+    return !matchesToken(nextToken, EOF, LParen, RParen, And, Or);
   }
 
   private parenthesisExpression = this.RULE(

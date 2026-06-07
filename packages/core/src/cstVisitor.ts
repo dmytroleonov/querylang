@@ -1,5 +1,5 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: todo better types
-import { type CstNode, tokenMatcher } from 'chevrotain';
+import type { CstNode } from 'chevrotain';
 import { Null, QuotedValue, Value } from '@/builtin.js';
 import type { CreatedKeywords } from '@/createKeywords.js';
 import type {
@@ -32,7 +32,7 @@ import type {
   Op,
   QueryLangError,
 } from '@/types.js';
-import { escapeString } from '@/utils.js';
+import { escapeString, matchesToken } from '@/utils.js';
 
 export type QueryLangCstVisitorResult<TKeywords extends CreateKeywordInput> = {
   errors: QueryLangError[];
@@ -209,7 +209,7 @@ export function createChevrotainCstVisitor<
     }
 
     private getValueFromToken(token: IQueryLangToken): string {
-      if (tokenMatcher(token, Value) || tokenMatcher(token, QuotedValue)) {
+      if (matchesToken(token, Value, QuotedValue)) {
         return escapeString(token.image);
       } else {
         return token.image;
@@ -451,7 +451,7 @@ export function createChevrotainCstVisitor<
     private buildGlobalPredicate(ctx: ValueExpressionCstChildren): OutputAst {
       const valueToken = ctx.value[0]!;
       const children: AnyPredicateExpression[] = [];
-      if (tokenMatcher(valueToken, Null)) {
+      if (matchesToken(valueToken, Null)) {
         for (const kw of Object.keys(originalKeywords)) {
           children.push({
             type: 'PREDICATE',
@@ -518,7 +518,7 @@ export function createChevrotainCstVisitor<
       }
 
       const valueToken = ctx.value[0]!;
-      if (tokenMatcher(valueToken, Null)) {
+      if (matchesToken(valueToken, Null)) {
         return {
           type: 'PREDICATE',
           keyword,

@@ -1,3 +1,6 @@
+import { type IToken, type TokenType, tokenMatcher } from 'chevrotain';
+import type { IQueryLangToken } from './cstVisitor.types.js';
+
 export function escapeString(input: string): string {
   const firstCh = input.charAt(0);
   const isQuotedString = firstCh === '"' || firstCh === "'";
@@ -38,4 +41,13 @@ function escapeUnquotedString(input: string): string {
   }
 
   return res;
+}
+
+export function matchesToken(
+  token: IQueryLangToken | IToken,
+  ...tokensToMatch: [TokenType, ...TokenType[]]
+): boolean {
+  return tokensToMatch.some((tokenToMatch) =>
+    tokenMatcher(token, tokenToMatch),
+  );
 }
