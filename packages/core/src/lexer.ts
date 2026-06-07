@@ -116,13 +116,25 @@ function lexingErrorToQueryLangError(error: ILexingError): QueryLangError {
   };
 }
 
+function buildUnexpectedCharactersMessage(
+  fullText: string,
+  startOffset: number,
+  length: number,
+): string {
+  const ch = fullText.slice(startOffset, startOffset + length + 1);
+  return `unexpected character ->${ch}<-`;
+}
+
 export function createChevrotainLexer(tokens: TokenType[]): ChevrotainLexer {
   const chevrotainLexer = new Lexer(tokens, {
     recoveryEnabled: false,
     deferDefinitionErrorsHandling: false,
     ensureOptimizations: true,
-    // todo
-    // errorMessageProvider,
+    errorMessageProvider: {
+      buildUnexpectedCharactersMessage,
+      // won't ever be used since we have only one mode
+      buildUnableToPopLexerModeMessage: () => '',
+    },
     positionTracking: 'full',
     safeMode: false,
     skipValidations: false,
