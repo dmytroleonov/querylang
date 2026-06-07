@@ -136,6 +136,7 @@ export class InternalQlParser extends CstParser {
           },
         },
       ]);
+      // make ws always optional?
       this.OR2([
         {
           GATE: () => this.isWhitespaceRequired(),
@@ -249,7 +250,7 @@ function parsingErrorToQueryLangError(
 ): QueryLangError {
   const { token } = error;
   return {
-    message: `unexpected token "${token.image}"`,
+    message: `unexpected token ->${token.image}<-`,
     startOffset: token.startOffset,
     startLine: token.startLine!,
     startColumn: token.startColumn!,
