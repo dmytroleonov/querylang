@@ -189,17 +189,6 @@ export type Op<
       ? StringOp<TConfig, TKeyword>
       : never;
 
-// export type Op<TConfig extends KeywordTypes, TKeyword extends keyof TConfig> =
-//   | ILikeOp<TConfig, TKeyword>
-//   | LikeOp<TConfig, TKeyword>
-//   | BetweenOp<TConfig, TKeyword>
-//   | EqOp<TConfig, TKeyword>
-//   | LtOp<TConfig, TKeyword>
-//   | LteOp<TConfig, TKeyword>
-//   | GtOp<TConfig, TKeyword>
-//   | GteOp<TConfig, TKeyword>
-//   | IsNullOp;
-
 export type PredicateExpression<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,

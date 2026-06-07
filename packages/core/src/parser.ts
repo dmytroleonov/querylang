@@ -194,12 +194,12 @@ export class InternalQlParser extends CstParser {
     this.OPTION({
       DEF: () => {
         this.OR([
-          { ALT: () => this.CONSUME(Eq) },
-          { ALT: () => this.CONSUME(Gte) },
-          { ALT: () => this.CONSUME(Gt) },
-          { ALT: () => this.CONSUME(Lte) },
-          { ALT: () => this.CONSUME(Lt) },
-          { ALT: () => this.CONSUME(Tilde) },
+          { ALT: () => this.CONSUME(Eq, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Gte, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Gt, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Lte, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Lt, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Tilde, { LABEL: 'modifier' }) },
         ]);
       },
     });
