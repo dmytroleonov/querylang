@@ -1,7 +1,6 @@
 import {
   type CstNode,
   CstParser,
-  EOF,
   type IRecognitionException,
   type IToken,
   type TokenType,
@@ -75,10 +74,8 @@ export class InternalQlParser extends CstParser {
     (config?: ParsingStepConfig) => {
       this.SUBRULE(this.keywordOrAtomicExpression, { ARGS: [config] });
       this.MANY(() => {
-        this.OPTION({ DEF: () => this.CONSUME(And) });
-        this.OPTION1(() => {
-          this.CONSUME(Whitespace);
-        });
+        this.OPTION(() => this.CONSUME(And));
+        this.OPTION1(() => this.CONSUME(Whitespace));
         this.SUBRULE2(this.keywordOrAtomicExpression, { ARGS: [config] });
       });
     },
@@ -103,20 +100,20 @@ export class InternalQlParser extends CstParser {
   );
 
   private keywordExpression = this.RULE('keywordExpression', () => {
-    this.OPTION({
-      DEF: () => this.CONSUME(Not),
-    });
+    this.OPTION(() => this.CONSUME(Not));
+    this.OPTION1(() => this.CONSUME(Whitespace));
     this.CONSUME(Keyword);
+    this.OPTION2(() => this.CONSUME1(Whitespace));
     this.CONSUME(Colon);
+    this.OPTION3(() => this.CONSUME2(Whitespace));
     this.SUBRULE(this.atomicExpression, { ARGS: [{ isGlobal: false }] });
   });
 
   private atomicExpression = this.RULE(
     'atomicExpression',
     (config?: ParsingStepConfig) => {
-      this.OPTION({
-        DEF: () => this.CONSUME(Not),
-      });
+      this.OPTION(() => this.CONSUME(Not));
+      this.OPTION1(() => this.CONSUME(Whitespace));
       this.OR([
         {
           ALT: () =>
@@ -135,27 +132,9 @@ export class InternalQlParser extends CstParser {
           },
         },
       ]);
-      // make ws always optional?
-      this.OR2([
-        {
-          GATE: () => this.isWhitespaceRequired(),
-          ALT: () => this.CONSUME(Whitespace),
-        },
-        {
-          GATE: () => !this.isWhitespaceRequired(),
-          ALT: () =>
-            this.OPTION1(() => {
-              this.CONSUME1(Whitespace);
-            }),
-        },
-      ]);
+      this.OPTION2(() => this.CONSUME1(Whitespace));
     },
   );
-
-  private isWhitespaceRequired(): boolean {
-    const nextToken = this.LA(1);
-    return !matchesToken(nextToken, EOF, LParen, RParen, And, Or);
-  }
 
   private parenthesisExpression = this.RULE(
     'parenthesisExpression',
@@ -191,18 +170,17 @@ export class InternalQlParser extends CstParser {
   });
 
   private valueExpression = this.RULE('valueExpression', () => {
-    this.OPTION({
-      DEF: () => {
-        this.OR([
-          { ALT: () => this.CONSUME(Eq, { LABEL: 'modifier' }) },
-          { ALT: () => this.CONSUME(Gte, { LABEL: 'modifier' }) },
-          { ALT: () => this.CONSUME(Gt, { LABEL: 'modifier' }) },
-          { ALT: () => this.CONSUME(Lte, { LABEL: 'modifier' }) },
-          { ALT: () => this.CONSUME(Lt, { LABEL: 'modifier' }) },
-          { ALT: () => this.CONSUME(Tilde, { LABEL: 'modifier' }) },
-        ]);
-      },
-    });
+    this.OPTION(() =>
+      this.OR([
+        { ALT: () => this.CONSUME(Eq, { LABEL: 'modifier' }) },
+        { ALT: () => this.CONSUME(Gte, { LABEL: 'modifier' }) },
+        { ALT: () => this.CONSUME(Gt, { LABEL: 'modifier' }) },
+        { ALT: () => this.CONSUME(Lte, { LABEL: 'modifier' }) },
+        { ALT: () => this.CONSUME(Lt, { LABEL: 'modifier' }) },
+        { ALT: () => this.CONSUME(Tilde, { LABEL: 'modifier' }) },
+      ]),
+    );
+    this.OPTION1(() => this.CONSUME(Whitespace));
     this.CONSUME(AnyValue, { LABEL: 'value' });
   });
 }
