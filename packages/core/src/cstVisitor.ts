@@ -29,7 +29,7 @@ import type {
   QueryLangError,
 } from '@/types.js';
 import {
-  buildPredicateExpression,
+  buildKeywordPredicateExpression,
   getValueFromToken,
   isValidTokenWithModifier,
   matchesToken,
@@ -495,7 +495,7 @@ Wrap it in single or double quotes to perform a string lookup',
         return { type: 'AND', children: [] };
       }
 
-      return buildPredicateExpression(
+      return buildKeywordPredicateExpression(
         type,
         originalKeyword,
         transformRes.value,

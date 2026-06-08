@@ -180,7 +180,7 @@ export function getValueFromToken(token: IQueryLangToken): string {
   }
 }
 
-export function buildPredicateExpression(
+export function buildKeywordPredicateExpression(
   type: DataType,
   keyword: string,
   value: string | number | boolean,
