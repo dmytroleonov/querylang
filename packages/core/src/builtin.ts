@@ -25,6 +25,11 @@ export const BooleanValue = createToken({
   pattern: Lexer.NA,
 });
 
+export const StringValue = createToken({
+  name: 'string',
+  pattern: Lexer.NA,
+});
+
 // matches any character escaped and doesnt' allow the following without escaping:
 // \s regex
 // !, &, |, (, ), :, =, ~, ', ", ., >, <
@@ -34,12 +39,12 @@ export const Value = createToken({
   pattern:
     // biome-ignore lint/suspicious/noControlCharactersInRegex: chevrotain workaround
     /(?:\\.|[\u0000-\u0008\u000e-\u001f\u0023-\u0025\u002a-\u002d\u002f-\u0039\u003b\u003f\u003e-\u005b\u005d-\u007b\u007d\u007f-\u009f\u00a1-\u167f\u1681-\u1fff\u200b-\u2027\u202a-\u202e\u2030-\u205e\u2026-\u2fff\u3001-\ufefe\uff00-\uffff])+/,
-  categories: AnyValue,
+  categories: [AnyValue, StringValue],
 });
 export const QuotedValue = createToken({
   name: 'quotedValue',
   pattern: /(['"])(?:\\.|(?!\1)[^\\])*\1/,
-  categories: AnyValue,
+  categories: [AnyValue, StringValue],
 });
 export const False = createToken({
   name: 'false',

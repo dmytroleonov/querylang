@@ -6,16 +6,14 @@ import {
   Lt,
   Lte,
   NumberValue,
-  QuotedValue,
+  StringValue,
   Tilde,
-  Value,
 } from '@/builtin.js';
 import type { IQueryLangToken } from '@/cstVisitor.types.js';
 import { QueryLangException } from '@/erorr.js';
 import type {
   AnyPredicateExpression,
   DataType,
-  PredicateExpression,
   QueryLangError,
   UntypedOp,
 } from '@/types.js';
@@ -173,7 +171,7 @@ export function isValidTokenWithModifier(
 }
 
 export function getValueFromToken(token: IQueryLangToken): string {
-  if (matchesToken(token, Value, QuotedValue)) {
+  if (matchesToken(token, StringValue)) {
     return escapeString(token.image);
   } else {
     return token.image;
