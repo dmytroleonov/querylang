@@ -20,6 +20,11 @@ export const NumberValue = createToken({
   categories: AnyValue,
 });
 
+export const BooleanValue = createToken({
+  name: 'boolean',
+  pattern: Lexer.NA,
+});
+
 // matches any character escaped and doesnt' allow the following without escaping:
 // \s regex
 // !, &, |, (, ), :, =, ~, ', ", ., >, <
@@ -35,6 +40,18 @@ export const QuotedValue = createToken({
   name: 'quotedValue',
   pattern: /(['"])(?:\\.|(?!\1)[^\\])*\1/,
   categories: AnyValue,
+});
+export const False = createToken({
+  name: 'false',
+  pattern: /false/,
+  longer_alt: Value,
+  categories: [BooleanValue, AnyValue],
+});
+export const True = createToken({
+  name: 'true',
+  pattern: /true/,
+  longer_alt: Value,
+  categories: [BooleanValue, AnyValue],
 });
 export const Range = createToken({
   name: 'range',

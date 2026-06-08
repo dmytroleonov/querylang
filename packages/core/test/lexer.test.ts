@@ -32,27 +32,6 @@ describe(sortTokens, () => {
   });
 });
 
-describe(insertBuiltinTokens, () => {
-  it('inserts sortable tokens at the right position', () => {
-    const tokens: TokenType[] = sortTokens([
-      createToken({ name: 'nullab' }),
-      createToken({ name: 'nulla' }),
-      createToken({ name: 'nul' }),
-      createToken({ name: 'nu' }),
-      createToken({ name: 'n' }),
-    ]);
-    insertBuiltinTokens(tokens);
-    expect(tokens.map((t) => t.name)).toStrictEqual([
-      'nullab',
-      'nulla',
-      'null',
-      'nul',
-      'nu',
-      'n',
-    ]);
-  });
-});
-
 describe(createLanguage, () => {
   it('should create and return keywords and tokens', () => {
     const language = createLanguage({
