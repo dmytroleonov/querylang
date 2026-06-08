@@ -189,6 +189,29 @@ export type Op<
       ? StringOp<TConfig, TKeyword>
       : never;
 
+export type UntypedOp<
+  TConfig extends KeywordTypes = KeywordTypes,
+  TKeyword extends keyof TConfig = keyof TConfig,
+> =
+  | ILikeOp<TConfig, TKeyword>
+  | LikeOp<TConfig, TKeyword>
+  | BetweenOp<TConfig, TKeyword>
+  | EqOp<TConfig, TKeyword>
+  | LtOp<TConfig, TKeyword>
+  | LteOp<TConfig, TKeyword>
+  | GtOp<TConfig, TKeyword>
+  | GteOp<TConfig, TKeyword>
+  | IsNullOp;
+
+export type UntypedPredicateExpression<
+  TConfig extends KeywordTypes,
+  TKeyword extends keyof TConfig,
+> = {
+  type: 'PREDICATE';
+} & {
+  [K in TKeyword]: { keyword: Extract<K, string>; op: UntypedOp<TConfig, K> };
+}[TKeyword];
+
 export type PredicateExpression<
   TConfig extends KeywordTypes,
   TKeyword extends keyof TConfig,
@@ -224,7 +247,7 @@ export type NotExpression<
 
 export type KeywordDataType = number | string | boolean;
 export type KeywordTypes = Record<string, KeywordDataType>;
-export type AnyPredicateExpression = PredicateExpression<
+export type AnyPredicateExpression = UntypedPredicateExpression<
   { [key: string]: KeywordDataType },
   string
 >;
