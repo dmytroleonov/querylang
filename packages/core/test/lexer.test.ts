@@ -1,11 +1,6 @@
-import { createToken, type TokenType } from 'chevrotain';
+import { createToken } from 'chevrotain';
 import { describe, expect, it } from 'vitest';
-import {
-  createChevrotainLexer,
-  createLanguage,
-  insertBuiltinTokens,
-  sortTokens,
-} from '@/lexer.js';
+import { createChevrotainLexer, createLanguage, sortTokens } from '@/lexer.js';
 
 describe(sortTokens, () => {
   it('should sort tokens in a reverse alphabetical order', () => {
