@@ -56,22 +56,18 @@ const NULL_IS_INVALID_IN_RANGES =
   '->null<- cannot be used in range lookups. Wrap it in single or double quotes \
 to perform a string lookup';
 
-export type VisitorParam<
-  TKeywords extends CreateKeywordInput,
-  TCreatedKeywords extends CreatedKeywords<TKeywords>,
-> = {
-  keyword?: Extract<keyof TCreatedKeywords, string>;
+export type VisitorParam<TKeywords extends CreateKeywordInput> = {
+  keyword?: Extract<keyof CreatedKeywords<TKeywords>, string>;
 };
 
 export function createChevrotainCstVisitor<
   TKeywords extends CreateKeywordInput,
-  TCreatedKeywords extends CreatedKeywords<TKeywords>,
 >(
-  keywords: TCreatedKeywords,
+  keywords: CreatedKeywords<TKeywords>,
   parser: InternalQlParser,
 ): QueryLangCstVisitor<TKeywords> {
   type OutputAst = Expression<{ [x: string]: KeywordDataType }>;
-  type Param = VisitorParam<TKeywords, TCreatedKeywords>;
+  type Param = VisitorParam<TKeywords>;
   const originalKeywords = {} as CreatedKeywords<{ [kw: string]: AnyKeyword }>;
   for (const [kw, definition] of Object.entries(keywords)) {
     if (definition.originalKeyword === kw) {
