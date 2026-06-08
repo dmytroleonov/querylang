@@ -1,12 +1,18 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: todo better types
 import type { CstNode } from 'chevrotain';
-import { Eq, Null } from '@/builtin.js';
+import {
+  BooleanValue,
+  Eq,
+  Null,
+  NumberValue,
+  StringValue,
+  Tilde,
+} from '@/builtin.js';
 import type { CreatedKeywords } from '@/createKeywords.js';
 import type {
   AndExpressionCstChildren,
   AtomicExpressionCstChildren,
   FullRangeCstChildren,
-  IQueryLangToken,
   IQueryLangVisitor,
   KeywordExpressionCstChildren,
   KeywordOrAtomicExpressionCstChildren,
@@ -23,6 +29,7 @@ import type {
   AnyKeyword,
   Ast,
   CreateKeywordInput,
+  DataType,
   Expression,
   InferKeywordConfig,
   KeywordDataType,
@@ -44,8 +51,7 @@ export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
   visit: (node: CstNode) => QueryLangCstVisitorResult<TKeywords>;
 };
 
-const ALLOWED_GLOBAL_SEARCHES =
-  'global searches are only allowed with "~" and "="';
+const ALLOWED_GLOBAL_SEARCHES = 'global range searches are not allowed';
 const NULL_IS_INVALID_IN_RANGES =
   '->null<- cannot be used in range lookups. Wrap it in single or double quotes \
 to perform a string lookup';
@@ -427,15 +433,12 @@ export function createChevrotainCstVisitor<
       } as any;
     }
 
-    private buildPredicate(
-      keyword: Param['keyword'],
-      valueToken: IQueryLangToken,
-      modifierToken: IQueryLangToken | undefined,
+    valueExpression(
+      ctx: ValueExpressionCstChildren,
+      { keyword }: Param = {},
     ): OutputAst {
-      if (!keyword) {
-        // TODO
-        return { type: 'AND', children: [] };
-      }
+      const modifierToken = ctx.modifier?.[0];
+      const valueToken = ctx.value[0]!;
 
       if (
         modifierToken &&
@@ -444,7 +447,7 @@ export function createChevrotainCstVisitor<
       ) {
         this.addErrors({
           message:
-            '->null<- is only allowed with "=". \
+            '->null<- search is only allowed with "=" modifier. \
 Wrap it in single or double quotes to perform a string lookup',
           startOffset: valueToken.startOffset,
           startLine: valueToken.startLine,
@@ -456,20 +459,134 @@ Wrap it in single or double quotes to perform a string lookup',
         return { type: 'AND', children: [] };
       }
 
-      if (matchesToken(valueToken, Null)) {
-        return {
-          type: 'PREDICATE',
-          keyword,
-          op: {
-            type: 'IS_NULL',
+      if (!keyword) {
+        const children: OutputAst[] = [];
+        if (matchesToken(valueToken, Null)) {
+          for (const kw of Object.keys(originalKeywords)) {
+            children.push({
+              type: 'PREDICATE',
+              keyword: kw,
+              op: {
+                type: 'IS_NULL',
+              },
+            });
+          }
+          if (children.length === 1) {
+            return children[0]!;
+          }
+
+          return { type: 'OR', children };
+        }
+
+        let type: DataType;
+        if (matchesToken(valueToken, StringValue)) {
+          if (modifierToken && !matchesToken(modifierToken, Eq, Tilde)) {
+            this.addErrors({
+              message:
+                'global string search is only allowed with "=" and "~" modifiers',
+              startOffset: modifierToken.startOffset,
+              startLine: modifierToken.startLine,
+              startColumn: modifierToken.startColumn,
+              endOffset: modifierToken.endOffset,
+              endLine: modifierToken.endLine,
+              endColumn: modifierToken.endColumn,
+            });
+            return { type: 'AND', children: [] };
+          }
+          type = 'string';
+        } else if (matchesToken(valueToken, NumberValue)) {
+          if (modifierToken && !matchesToken(modifierToken, Eq)) {
+            this.addErrors({
+              message: 'global number search is only allowed with "=" modifier',
+              startOffset: modifierToken.startOffset,
+              startLine: modifierToken.startLine,
+              startColumn: modifierToken.startColumn,
+              endOffset: modifierToken.endOffset,
+              endLine: modifierToken.endLine,
+              endColumn: modifierToken.endColumn,
+            });
+            return { type: 'AND', children: [] };
+          }
+          type = 'number';
+        } else if (matchesToken(valueToken, BooleanValue)) {
+          if (modifierToken && !matchesToken(modifierToken, Eq)) {
+            this.addErrors({
+              message:
+                'global boolean search is only allowed with "=" modifier',
+              startOffset: modifierToken.startOffset,
+              startLine: modifierToken.startLine,
+              startColumn: modifierToken.startColumn,
+              endOffset: modifierToken.endOffset,
+              endLine: modifierToken.endLine,
+              endColumn: modifierToken.endColumn,
+            });
+            return { type: 'AND', children: [] };
+          }
+          type = 'boolean';
+        } else {
+          throw new QueryLangException(
+            `Unexpected global value token: ${valueToken.tokenType.name}`,
+          );
+        }
+
+        const value = getValueFromToken(valueToken);
+        for (const [
+          kw,
+          {
+            config: { type: originalKeywordType, transform },
           },
-        };
+        ] of Object.entries(originalKeywords)) {
+          if (originalKeywordType !== type) {
+            continue;
+          }
+          const res = transform(value);
+          if (!res.ok) {
+            // skip keywords that cannot be searched by this value
+            continue;
+          }
+          const expression = buildKeywordPredicateExpression(
+            type,
+            kw,
+            res.value,
+            modifierToken,
+          ) as OutputAst;
+          children.push(expression);
+        }
+
+        if (children.length === 0) {
+          this.addErrors({
+            message: `->${valueToken.image}<- can't be used to search by any keywords`,
+            startOffset: valueToken.startOffset,
+            startLine: valueToken.startLine,
+            startColumn: valueToken.startColumn,
+            endOffset: valueToken.endOffset,
+            endLine: valueToken.endLine,
+            endColumn: valueToken.endColumn,
+          });
+        }
+
+        if (children.length === 1) {
+          return children[0]!;
+        }
+
+        return { type: 'OR', children };
       }
 
       const {
         config: { type, transform },
         originalKeyword,
       } = keywords[keyword];
+
+      if (matchesToken(valueToken, Null)) {
+        return {
+          type: 'PREDICATE',
+          keyword: originalKeyword,
+          op: {
+            type: 'IS_NULL',
+          },
+        };
+      }
+
       const validationRes = isValidTokenWithModifier(
         type,
         valueToken,
@@ -501,20 +618,6 @@ Wrap it in single or double quotes to perform a string lookup',
         transformRes.value,
         modifierToken,
       ) as OutputAst;
-    }
-
-    valueExpression(
-      ctx: ValueExpressionCstChildren,
-      { keyword }: Param = {},
-    ): OutputAst {
-      if (!keyword) {
-        return { type: 'AND', children: [] };
-      }
-
-      const modifierToken = ctx.modifier?.[0];
-      const valueToken = ctx.value[0]!;
-
-      return this.buildPredicate(keyword, valueToken, modifierToken);
     }
   }
 

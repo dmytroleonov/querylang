@@ -80,6 +80,10 @@ type ModiferValidationResult =
       errors: QueryLangError[];
     };
 
+function expectedStringMessage(value: string): string {
+  return `expected string, got ->${value}<-`;
+}
+
 function expectedNumberMessage(value: string): string {
   return `expected number, got ->${value}<-`;
 }
@@ -95,6 +99,24 @@ export function isValidTokenWithModifier(
   modifierToken?: IQueryLangToken,
 ): ModiferValidationResult {
   if (!modifierToken || type === 'string') {
+    const isStringToken = matchesToken(valueToken, StringValue);
+    if (!isStringToken) {
+      return {
+        ok: false,
+        errors: [
+          {
+            message: expectedStringMessage(valueToken.image),
+            startOffset: valueToken.startOffset,
+            startLine: valueToken.startLine,
+            startColumn: valueToken.startColumn,
+            endOffset: valueToken.endOffset,
+            endLine: valueToken.endLine,
+            endColumn: valueToken.endColumn,
+          },
+        ],
+      };
+    }
+
     return { ok: true };
   }
 
