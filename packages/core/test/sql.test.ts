@@ -9,7 +9,7 @@ describe(toSql, () => {
     });
 
     expect(
-      toSql({
+      toSql<{ asdf: string }>({
         type: 'PREDICATE',
         keyword: 'asdf',
         op: { type: 'LIKE', value: 'somevalue' },
@@ -20,7 +20,12 @@ describe(toSql, () => {
     });
 
     expect(
-      toSql({
+      toSql<{
+        asdf: string;
+        otherkw: number;
+        otherkw2: string;
+        otherkw3: number;
+      }>({
         type: 'AND',
         children: [
           {

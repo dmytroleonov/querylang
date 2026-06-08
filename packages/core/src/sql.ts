@@ -29,7 +29,6 @@ export function toSql<TConfig extends KeywordTypes>(
   };
 }
 
-// TODO: handle LIKE and ILIKE for numbers
 function buildExpression<TConfig extends KeywordTypes>(
   expr: Expression<TConfig>,
   ctx: SqlCtx,

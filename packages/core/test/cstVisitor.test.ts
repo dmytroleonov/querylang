@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createChevrotainCstVisitor } from '@/cstVisitor.js';
 import { createQlParser } from '@/parser.js';
+import type { Empty } from '@/types.js';
 
 // TODO: test null values
 // should only allow null gobally and as keyword value
 // should not allow any modifiers besides = with null
 // should not allow null in ranges
+
+const empty: Empty = { type: 'EMPTY' };
 
 describe(createChevrotainCstVisitor, () => {
   it('should create an AST with a valid input', () => {
@@ -52,5 +55,15 @@ describe(createChevrotainCstVisitor, () => {
       },
       type: 'NOT',
     });
+  });
+
+  it('should return empty ast with an empty input', () => {
+    const parser = createQlParser({ kw: { type: 'string' } });
+    const emptyInputs = ['', ' ', ' \n\t\r'];
+    for (const input of emptyInputs) {
+      const { ast, errors } = parser.parse(input);
+      expect(ast).toStrictEqual(empty);
+      expect(errors).toStrictEqual([]);
+    }
   });
 });

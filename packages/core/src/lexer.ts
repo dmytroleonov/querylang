@@ -9,13 +9,13 @@ import {
   AnyValue,
   Colon,
   Eq,
+  False,
   Gt,
   Gte,
   Keyword,
   LParen,
   Lt,
   Lte,
-  NonNullValue,
   Not,
   Null,
   NumberValue,
@@ -23,7 +23,9 @@ import {
   QuotedValue,
   Range,
   RParen,
+  StringValue,
   Tilde,
+  True,
   Value,
   Whitespace,
 } from '@/builtin.js';
@@ -45,23 +47,7 @@ export function sortTokens(tokens: TokenType[]): TokenType[] {
   return tokens.toSorted((a, b) => b.name.localeCompare(a.name));
 }
 
-const sortableBuiltinTokens: TokenType[] = [Null];
-
-export function insertBuiltinTokens(tokens: TokenType[]): void {
-  for (const builtinToken of sortableBuiltinTokens) {
-    let inserted = false;
-    for (const [i, t] of tokens.entries()) {
-      if (builtinToken.name.localeCompare(t.name) > 0) {
-        tokens.splice(i, 0, builtinToken);
-        inserted = true;
-        break;
-      }
-    }
-    if (!inserted) {
-      tokens.unshift(builtinToken);
-    }
-  }
-}
+const sortableBuiltinTokens: TokenType[] = [False, True, Null];
 
 export type Language<TKeywords extends CreateKeywordInput> = {
   keywords: CreatedKeywords<TKeywords>;
@@ -73,8 +59,7 @@ export function createLanguage<TKeywords extends CreateKeywordInput>(
 ): Language<TKeywords> {
   const createdKeywords = createKeywords(keywords);
   const keywordTokens = Object.values(createdKeywords).map((k) => k.tokenType);
-  const sortedTokens = sortTokens(keywordTokens);
-  insertBuiltinTokens(sortedTokens);
+  const tokens = sortTokens([...keywordTokens, ...sortableBuiltinTokens]);
 
   return {
     keywords: createdKeywords,
@@ -93,11 +78,11 @@ export function createLanguage<TKeywords extends CreateKeywordInput>(
       Lt,
       Eq,
       Tilde,
-      ...sortedTokens,
+      ...tokens,
       NumberValue,
       Value,
       QuotedValue,
-      NonNullValue,
+      StringValue,
       AnyValue,
       Keyword,
     ],

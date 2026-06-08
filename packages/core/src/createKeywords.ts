@@ -1,11 +1,10 @@
 import { createToken, type ITokenConfig, type TokenType } from 'chevrotain';
-import { Keyword, Value } from '@/builtin.js';
+import { False, Keyword, Null, True, Value } from '@/builtin.js';
 import { QueryLangException } from '@/erorr.js';
 import { getDefaultTransform } from '@/transformer.js';
 import type { AnyKeyword, CreateKeywordInput, TransformFn } from '@/types.js';
 
-// TODO: add separate keywords for true and false
-export const reservedKeywords = ['null'];
+export const reservedKeywords = [Null.name, True.name, False.name];
 
 const keywordLiteralPattern = /^[_A-Za-z][_A-Za-z0-9]*$/;
 

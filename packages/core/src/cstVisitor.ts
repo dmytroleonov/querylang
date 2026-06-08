@@ -1,11 +1,18 @@
-import { type CstNode, tokenMatcher } from 'chevrotain';
-import { Null, QuotedValue, Value } from '@/builtin.js';
+// biome-ignore-all lint/suspicious/noExplicitAny: todo better types
+import type { CstNode } from 'chevrotain';
+import {
+  BooleanValue,
+  Eq,
+  Null,
+  NumberValue,
+  StringValue,
+  Tilde,
+} from '@/builtin.js';
 import type { CreatedKeywords } from '@/createKeywords.js';
 import type {
   AndExpressionCstChildren,
   AtomicExpressionCstChildren,
   FullRangeCstChildren,
-  IQueryLangToken,
   IQueryLangVisitor,
   KeywordExpressionCstChildren,
   KeywordOrAtomicExpressionCstChildren,
@@ -20,18 +27,20 @@ import { QueryLangException } from '@/erorr.js';
 import type { InternalQlParser } from '@/parser.js';
 import type {
   AnyKeyword,
-  AnyOpType,
-  AnyPredicateExpression,
   Ast,
   CreateKeywordInput,
   DataType,
   Expression,
   InferKeywordConfig,
   KeywordDataType,
-  Op,
   QueryLangError,
 } from '@/types.js';
-import { escapeString } from '@/utils.js';
+import {
+  buildKeywordPredicateExpression,
+  getValueFromToken,
+  isValidTokenWithModifier,
+  matchesToken,
+} from '@/utils.js';
 
 export type QueryLangCstVisitorResult<TKeywords extends CreateKeywordInput> = {
   errors: QueryLangError[];
@@ -42,11 +51,13 @@ export type QueryLangCstVisitor<TKeywords extends CreateKeywordInput> = {
   visit: (node: CstNode) => QueryLangCstVisitorResult<TKeywords>;
 };
 
-const ALLOWED_GLOBAL_SEARCHES =
-  'global searches are only allowed with "~" and "="';
+const ALLOWED_GLOBAL_SEARCHES = 'global range searches are not allowed';
+const NULL_IS_INVALID_IN_RANGES =
+  '->null<- cannot be used in range lookups. Wrap it in single or double quotes \
+to perform a string lookup';
 
 export type VisitorParam<TKeywords extends CreateKeywordInput> = {
-  keyword?: Extract<keyof TKeywords, string>;
+  keyword?: Extract<keyof CreatedKeywords<TKeywords>, string>;
 };
 
 export function createChevrotainCstVisitor<
@@ -75,8 +86,8 @@ export function createChevrotainCstVisitor<
       this.validateVisitor();
     }
 
-    private addError(error: QueryLangError): void {
-      this.errors.push(error);
+    private addErrors(...errors: QueryLangError[]): void {
+      this.errors.push(...errors);
     }
 
     public getErrors(): QueryLangError[] {
@@ -144,7 +155,7 @@ export function createChevrotainCstVisitor<
 
     atomicExpression(
       ctx: AtomicExpressionCstChildren,
-      param?: VisitorParam<TKeywords>,
+      param?: Param,
     ): OutputAst {
       if (ctx.valueExpression) {
         const expression = this.visit(ctx.valueExpression, param);
@@ -207,331 +218,45 @@ export function createChevrotainCstVisitor<
       throw new QueryLangException('Unreachable');
     }
 
-    private getValueFromToken(token: IQueryLangToken): string {
-      if (tokenMatcher(token, Value) || tokenMatcher(token, QuotedValue)) {
-        return escapeString(token.image);
-      } else {
-        return token.image;
-      }
-    }
-
     leftBoundedRange(
       ctx: LeftBoundedRangeCstChildren,
       { keyword }: Param = {},
     ): OutputAst {
       const valueToken = ctx.value[0]!;
-      const {
-        startOffset: valueStartOffset,
-        startLine: valueStartLine,
-        startColumn: valueStartColumn,
-        endOffset: valueEndOffset,
-        endLine: valueEndLine,
-        endColumn: valueEndColumn,
-      } = valueToken;
-      const {
-        endOffset: rangeEndOffset,
-        endLine: rangeEndLine,
-        endColumn: rangeEndColumn,
-      } = ctx.range[0]!;
+      const rangeToken = ctx.range[0]!;
       if (!keyword) {
-        this.addError({
+        this.addErrors({
           message: ALLOWED_GLOBAL_SEARCHES,
-          startOffset: valueStartOffset,
-          startLine: valueStartLine,
-          startColumn: valueStartColumn,
-          endOffset: rangeEndOffset,
-          endLine: rangeEndLine,
-          endColumn: rangeEndColumn,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: rangeToken.endOffset,
+          endLine: rangeToken.endLine,
+          endColumn: rangeToken.endColumn,
         });
         return { type: 'AND', children: [] };
       }
-
-      const value = this.getValueFromToken(valueToken);
-      const { transform } = keywords[keyword].config;
-      const res = transform(value);
-      if (!res.ok) {
-        this.addError({
-          message: res.error.message,
-          startOffset: valueStartOffset,
-          startLine: valueStartLine,
-          startColumn: valueStartColumn,
-          endOffset: valueEndOffset,
-          endLine: valueEndLine,
-          endColumn: valueEndColumn,
-        });
-        return { type: 'AND', children: [] };
-      }
-
-      return {
-        type: 'PREDICATE',
-        keyword,
-        op: {
-          type: 'GTE',
-          value: res.value,
-        },
-      };
-    }
-
-    fullRange(ctx: FullRangeCstChildren, { keyword }: Param = {}): OutputAst {
-      const lValueToken = ctx.lValue[0]!;
-      const {
-        startOffset: lStartOffset,
-        startLine: lStartLine,
-        startColumn: lStartColumn,
-        endOffset: lEndOffset,
-        endLine: lEndLine,
-        endColumn: lEndColumn,
-      } = lValueToken;
-      const rValueToken = ctx.rValue[0]!;
-      const {
-        startOffset: rStartOffset,
-        startLine: rStartLine,
-        startColumn: rStartColumn,
-        endOffset: rEndOffset,
-        endLine: rEndLine,
-        endColumn: rEndColumn,
-      } = rValueToken;
-
-      if (!keyword) {
-        this.addError({
-          message: ALLOWED_GLOBAL_SEARCHES,
-          startOffset: lStartOffset,
-          startLine: lStartLine,
-          startColumn: lStartColumn,
-          endOffset: rEndOffset,
-          endLine: rEndLine,
-          endColumn: rEndColumn,
-        });
-        return { type: 'AND', children: [] };
-      }
-
-      const lValue = this.getValueFromToken(lValueToken);
-      const rValue = this.getValueFromToken(rValueToken);
-      const { transform } = keywords[keyword].config;
-      const lRes = transform(lValue);
-      const rRes = transform(rValue);
-      if (!lRes.ok) {
-        this.addError({
-          message: lRes.error.message,
-          startOffset: lStartOffset,
-          startLine: lStartLine,
-          startColumn: lStartColumn,
-          endOffset: lEndOffset,
-          endLine: lEndLine,
-          endColumn: lEndColumn,
-        });
-      }
-      if (!rRes.ok) {
-        this.addError({
-          message: rRes.error.message,
-          startOffset: rStartOffset,
-          startLine: rStartLine,
-          startColumn: rStartColumn,
-          endOffset: rEndOffset,
-          endLine: rEndLine,
-          endColumn: rEndColumn,
-        });
-      }
-      if (!lRes.ok || !rRes.ok) {
-        return { type: 'AND', children: [] };
-      }
-
-      return {
-        type: 'PREDICATE',
-        keyword,
-        op: {
-          type: 'BETWEEN',
-          min: lRes.value,
-          max: rRes.value,
-        },
-      };
-    }
-
-    rightBoundedRange(
-      ctx: RightBoundedRangeCstChildren,
-      { keyword }: Param = {},
-    ): OutputAst {
-      const {
-        startOffset: rangeStartOffset,
-        startLine: rangeStartLine,
-        startColumn: rangeStartColumn,
-      } = ctx.range[0]!;
-      const valueToken = ctx.value[0]!;
-      const {
-        startOffset: valueStartOffset,
-        startLine: valueStartLine,
-        startColumn: valueStartColumn,
-        endOffset: valueEndOffset,
-        endLine: valueEndLine,
-        endColumn: valueEndColumn,
-      } = valueToken;
-      if (!keyword) {
-        this.addError({
-          message: ALLOWED_GLOBAL_SEARCHES,
-          startOffset: rangeStartOffset,
-          startLine: rangeStartLine,
-          startColumn: rangeStartColumn,
-          endOffset: valueEndOffset,
-          endLine: valueEndLine,
-          endColumn: valueEndColumn,
-        });
-        return { type: 'AND', children: [] };
-      }
-
-      const value = this.getValueFromToken(valueToken);
-      const { transform } = keywords[keyword].config;
-      const res = transform(value);
-      if (!res.ok) {
-        this.addError({
-          message: res.error.message,
-          startOffset: valueStartOffset,
-          startLine: valueStartLine,
-          startColumn: valueStartColumn,
-          endOffset: valueEndOffset,
-          endLine: valueEndLine,
-          endColumn: valueEndColumn,
-        });
-        return { type: 'AND', children: [] };
-      }
-
-      return {
-        type: 'PREDICATE',
-        keyword,
-        op: {
-          type: 'LTE',
-          value: res.value,
-        },
-      };
-    }
-
-    private buildPredicateExpression(
-      ctx: ValueExpressionCstChildren,
-      {
-        keyword,
-        type,
-        value,
-      }: {
-        keyword: string;
-        type: DataType;
-        value: KeywordDataType;
-      },
-    ): AnyPredicateExpression {
-      let opType: AnyOpType = 'ILIKE';
-      if (type === 'number') {
-        opType = 'EQ';
-      }
-
-      let op: Op<{ [key: string]: KeywordDataType }, string> = {
-        type: opType,
-        value,
-      };
-
-      if (ctx.eq) {
-        op = { type: 'EQ', value };
-      } else if (ctx.tilde) {
-        op = { type: 'LIKE', value };
-      } else if (ctx.gt) {
-        op = { type: 'GT', value };
-      } else if (ctx.gte) {
-        op = { type: 'GTE', value };
-      } else if (ctx.lt) {
-        op = { type: 'LT', value };
-      } else if (ctx.lte) {
-        op = { type: 'LTE', value };
-      }
-
-      return {
-        type: 'PREDICATE',
-        keyword,
-        op,
-      };
-    }
-
-    private buildGlobalPredicate(ctx: ValueExpressionCstChildren): OutputAst {
-      const valueToken = ctx.value[0]!;
-      const children: AnyPredicateExpression[] = [];
-      if (tokenMatcher(valueToken, Null)) {
-        for (const kw of Object.keys(originalKeywords)) {
-          children.push({
-            type: 'PREDICATE',
-            keyword: kw,
-            op: {
-              type: 'IS_NULL',
-            },
-          });
-        }
-
-        return { type: 'OR', children };
-      }
-
-      const value = this.getValueFromToken(valueToken);
-      const modifier = (ctx.gt || ctx.lt || ctx.gte || ctx.lte) as
-        | [IQueryLangToken, ...IQueryLangToken[]]
-        | undefined;
-      if (modifier) {
-        const opToken = modifier[0];
-        this.addError({
-          message: ALLOWED_GLOBAL_SEARCHES,
-          startOffset: opToken.startOffset,
-          startLine: opToken.startLine,
-          startColumn: opToken.startColumn,
+      if (matchesToken(valueToken, Null)) {
+        this.addErrors({
+          message: NULL_IS_INVALID_IN_RANGES,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
           endOffset: valueToken.endOffset,
           endLine: valueToken.endLine,
           endColumn: valueToken.endColumn,
         });
-      } else {
-        for (const [kw, { config }] of Object.entries(originalKeywords)) {
-          const res = config.transform(value);
-          if (res.ok) {
-            const expression = this.buildPredicateExpression(ctx, {
-              keyword: kw,
-              type: config.type,
-              value: res.value,
-            });
-            children.push(expression);
-          }
-        }
-
-        if (!children.length) {
-          this.addError({
-            message: "this value can't be used to search by any keywords",
-            startOffset: valueToken.startOffset,
-            startLine: valueToken.startLine,
-            startColumn: valueToken.startColumn,
-            endOffset: valueToken.endOffset,
-            endLine: valueToken.endLine,
-            endColumn: valueToken.endColumn,
-          });
-        }
+        return { type: 'AND', children: [] };
       }
 
-      return { type: 'OR', children };
-    }
-
-    valueExpression(
-      ctx: ValueExpressionCstChildren,
-      { keyword }: VisitorParam<TKeywords> = {},
-    ): OutputAst {
-      if (!keyword) {
-        return this.buildGlobalPredicate(ctx);
-      }
-
-      const valueToken = ctx.value[0]!;
-      if (tokenMatcher(valueToken, Null)) {
-        return {
-          type: 'PREDICATE',
-          keyword,
-          op: {
-            type: 'IS_NULL',
-          },
-        };
-      }
-
-      const value = this.getValueFromToken(valueToken);
-      const { transform, type: keywordType } = keywords[keyword].config;
+      const value = getValueFromToken(valueToken);
+      const {
+        config: { transform },
+        originalKeyword,
+      } = keywords[keyword];
       const res = transform(value);
       if (!res.ok) {
-        this.addError({
+        this.addErrors({
           message: res.error.message,
           startOffset: valueToken.startOffset,
           startLine: valueToken.startLine,
@@ -543,11 +268,352 @@ export function createChevrotainCstVisitor<
         return { type: 'AND', children: [] };
       }
 
-      return this.buildPredicateExpression(ctx, {
-        keyword,
-        type: keywordType,
-        value: res.value,
-      });
+      return {
+        type: 'PREDICATE',
+        keyword: originalKeyword,
+        op: {
+          type: 'GTE',
+          value: res.value,
+        },
+      } as any;
+    }
+
+    fullRange(ctx: FullRangeCstChildren, { keyword }: Param = {}): OutputAst {
+      const lValueToken = ctx.lValue[0]!;
+      const rValueToken = ctx.rValue[0]!;
+
+      if (!keyword) {
+        this.addErrors({
+          message: ALLOWED_GLOBAL_SEARCHES,
+          startOffset: lValueToken.startOffset,
+          startLine: lValueToken.startLine,
+          startColumn: lValueToken.startColumn,
+          endOffset: rValueToken.endOffset,
+          endLine: rValueToken.endLine,
+          endColumn: rValueToken.endColumn,
+        });
+        return { type: 'AND', children: [] };
+      }
+
+      const isLValueNull = matchesToken(lValueToken, Null);
+      if (isLValueNull) {
+        this.addErrors({
+          message: NULL_IS_INVALID_IN_RANGES,
+          startOffset: lValueToken.startOffset,
+          startLine: lValueToken.startLine,
+          startColumn: lValueToken.startColumn,
+          endOffset: lValueToken.endOffset,
+          endLine: lValueToken.endLine,
+          endColumn: lValueToken.endColumn,
+        });
+      }
+      const isRValueNull = matchesToken(rValueToken, Null);
+      if (isRValueNull) {
+        this.addErrors({
+          message: NULL_IS_INVALID_IN_RANGES,
+          startOffset: rValueToken.startOffset,
+          startLine: rValueToken.startLine,
+          startColumn: rValueToken.startColumn,
+          endOffset: rValueToken.endOffset,
+          endLine: rValueToken.endLine,
+          endColumn: rValueToken.endColumn,
+        });
+      }
+      if (isLValueNull || isRValueNull) {
+        return { type: 'AND', children: [] };
+      }
+
+      const lValue = getValueFromToken(lValueToken);
+      const rValue = getValueFromToken(rValueToken);
+      const {
+        config: { transform },
+        originalKeyword,
+      } = keywords[keyword];
+      const lRes = transform(lValue);
+      const rRes = transform(rValue);
+      if (!lRes.ok) {
+        this.addErrors({
+          message: lRes.error.message,
+          startOffset: lValueToken.startOffset,
+          startLine: lValueToken.startLine,
+          startColumn: lValueToken.startColumn,
+          endOffset: lValueToken.endOffset,
+          endLine: lValueToken.endLine,
+          endColumn: lValueToken.endColumn,
+        });
+      }
+      if (!rRes.ok) {
+        this.addErrors({
+          message: rRes.error.message,
+          startOffset: rValueToken.startOffset,
+          startLine: rValueToken.startLine,
+          startColumn: rValueToken.startColumn,
+          endOffset: rValueToken.endOffset,
+          endLine: rValueToken.endLine,
+          endColumn: rValueToken.endColumn,
+        });
+      }
+      if (!lRes.ok || !rRes.ok) {
+        return { type: 'AND', children: [] };
+      }
+
+      return {
+        type: 'PREDICATE',
+        keyword: originalKeyword,
+        op: {
+          type: 'BETWEEN',
+          min: lRes.value,
+          max: rRes.value,
+        },
+      } as any;
+    }
+
+    rightBoundedRange(
+      ctx: RightBoundedRangeCstChildren,
+      { keyword }: Param = {},
+    ): OutputAst {
+      const rangeToken = ctx.range[0]!;
+      const valueToken = ctx.value[0]!;
+      if (!keyword) {
+        this.addErrors({
+          message: ALLOWED_GLOBAL_SEARCHES,
+          startOffset: rangeToken.startOffset,
+          startLine: rangeToken.startLine,
+          startColumn: rangeToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
+        });
+        return { type: 'AND', children: [] };
+      }
+
+      if (matchesToken(valueToken, Null)) {
+        this.addErrors({
+          message: NULL_IS_INVALID_IN_RANGES,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
+        });
+        return { type: 'AND', children: [] };
+      }
+
+      const value = getValueFromToken(valueToken);
+      const {
+        config: { transform },
+        originalKeyword,
+      } = keywords[keyword];
+      const res = transform(value);
+      if (!res.ok) {
+        this.addErrors({
+          message: res.error.message,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
+        });
+        return { type: 'AND', children: [] };
+      }
+
+      return {
+        type: 'PREDICATE',
+        keyword: originalKeyword,
+        op: {
+          type: 'LTE',
+          value: res.value,
+        },
+      } as any;
+    }
+
+    valueExpression(
+      ctx: ValueExpressionCstChildren,
+      { keyword }: Param = {},
+    ): OutputAst {
+      const modifierToken = ctx.modifier?.[0];
+      const valueToken = ctx.value[0]!;
+
+      if (
+        modifierToken &&
+        !matchesToken(modifierToken, Eq) &&
+        matchesToken(valueToken, Null)
+      ) {
+        this.addErrors({
+          message:
+            '->null<- search is only allowed with "=" modifier. \
+Wrap it in single or double quotes to perform a string lookup',
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
+        });
+        return { type: 'AND', children: [] };
+      }
+
+      if (!keyword) {
+        const children: OutputAst[] = [];
+        if (matchesToken(valueToken, Null)) {
+          for (const kw of Object.keys(originalKeywords)) {
+            children.push({
+              type: 'PREDICATE',
+              keyword: kw,
+              op: {
+                type: 'IS_NULL',
+              },
+            });
+          }
+          if (children.length === 1) {
+            return children[0]!;
+          }
+
+          return { type: 'OR', children };
+        }
+
+        let type: DataType;
+        if (matchesToken(valueToken, StringValue)) {
+          if (modifierToken && !matchesToken(modifierToken, Eq, Tilde)) {
+            this.addErrors({
+              message:
+                'global string search is only allowed with "=" and "~" modifiers',
+              startOffset: modifierToken.startOffset,
+              startLine: modifierToken.startLine,
+              startColumn: modifierToken.startColumn,
+              endOffset: modifierToken.endOffset,
+              endLine: modifierToken.endLine,
+              endColumn: modifierToken.endColumn,
+            });
+            return { type: 'AND', children: [] };
+          }
+          type = 'string';
+        } else if (matchesToken(valueToken, NumberValue)) {
+          if (modifierToken && !matchesToken(modifierToken, Eq)) {
+            this.addErrors({
+              message: 'global number search is only allowed with "=" modifier',
+              startOffset: modifierToken.startOffset,
+              startLine: modifierToken.startLine,
+              startColumn: modifierToken.startColumn,
+              endOffset: modifierToken.endOffset,
+              endLine: modifierToken.endLine,
+              endColumn: modifierToken.endColumn,
+            });
+            return { type: 'AND', children: [] };
+          }
+          type = 'number';
+        } else if (matchesToken(valueToken, BooleanValue)) {
+          if (modifierToken && !matchesToken(modifierToken, Eq)) {
+            this.addErrors({
+              message:
+                'global boolean search is only allowed with "=" modifier',
+              startOffset: modifierToken.startOffset,
+              startLine: modifierToken.startLine,
+              startColumn: modifierToken.startColumn,
+              endOffset: modifierToken.endOffset,
+              endLine: modifierToken.endLine,
+              endColumn: modifierToken.endColumn,
+            });
+            return { type: 'AND', children: [] };
+          }
+          type = 'boolean';
+        } else {
+          throw new QueryLangException(
+            `Unexpected global value token: ${valueToken.tokenType.name}`,
+          );
+        }
+
+        const value = getValueFromToken(valueToken);
+        for (const [
+          kw,
+          {
+            config: { type: originalKeywordType, transform },
+          },
+        ] of Object.entries(originalKeywords)) {
+          if (originalKeywordType !== type) {
+            continue;
+          }
+          const res = transform(value);
+          if (!res.ok) {
+            // skip keywords that cannot be searched by this value
+            continue;
+          }
+          const expression = buildKeywordPredicateExpression(
+            type,
+            kw,
+            res.value,
+            modifierToken,
+          ) as OutputAst;
+          children.push(expression);
+        }
+
+        if (children.length === 0) {
+          this.addErrors({
+            message: `->${valueToken.image}<- can't be used to search by any keywords`,
+            startOffset: valueToken.startOffset,
+            startLine: valueToken.startLine,
+            startColumn: valueToken.startColumn,
+            endOffset: valueToken.endOffset,
+            endLine: valueToken.endLine,
+            endColumn: valueToken.endColumn,
+          });
+        }
+
+        if (children.length === 1) {
+          return children[0]!;
+        }
+
+        return { type: 'OR', children };
+      }
+
+      const {
+        config: { type, transform },
+        originalKeyword,
+      } = keywords[keyword];
+
+      if (matchesToken(valueToken, Null)) {
+        return {
+          type: 'PREDICATE',
+          keyword: originalKeyword,
+          op: {
+            type: 'IS_NULL',
+          },
+        };
+      }
+
+      const validationRes = isValidTokenWithModifier(
+        type,
+        valueToken,
+        modifierToken,
+      );
+      if (!validationRes.ok) {
+        this.addErrors(...validationRes.errors);
+        return { type: 'AND', children: [] };
+      }
+
+      const value = getValueFromToken(valueToken);
+      const transformRes = transform(value);
+      if (!transformRes.ok) {
+        this.addErrors({
+          message: transformRes.error.message,
+          startOffset: valueToken.startOffset,
+          startLine: valueToken.startLine,
+          startColumn: valueToken.startColumn,
+          endOffset: valueToken.endOffset,
+          endLine: valueToken.endLine,
+          endColumn: valueToken.endColumn,
+        });
+        return { type: 'AND', children: [] };
+      }
+
+      return buildKeywordPredicateExpression(
+        type,
+        originalKeyword,
+        transformRes.value,
+        modifierToken,
+      ) as OutputAst;
     }
   }
 

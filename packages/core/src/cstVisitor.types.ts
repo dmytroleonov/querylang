@@ -130,12 +130,7 @@ export interface ValueExpressionCstNode extends CstNode {
 }
 
 export type ValueExpressionCstChildren = {
-  gte?: IQueryLangToken[];
-  gt?: IQueryLangToken[];
-  lte?: IQueryLangToken[];
-  lt?: IQueryLangToken[];
-  eq?: IQueryLangToken[];
-  tilde?: IQueryLangToken[];
+  modifier?: IQueryLangToken[];
   value: IQueryLangToken[];
 };
 

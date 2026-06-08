@@ -5,10 +5,10 @@ import {
   type IRecognitionException,
   type IToken,
   type TokenType,
-  tokenMatcher,
 } from 'chevrotain';
 import {
   And,
+  AnyValue,
   Colon,
   Eq,
   Gt,
@@ -17,9 +17,7 @@ import {
   LParen,
   Lt,
   Lte,
-  NonNullValue,
   Not,
-  Null,
   Or,
   Range,
   RParen,
@@ -34,6 +32,7 @@ import type {
   InferKeywordConfig,
   QueryLangError,
 } from '@/types.js';
+import { matchesToken } from '@/utils.js';
 
 export type ChevrotainParserResult = {
   node: CstNode;
@@ -154,9 +153,8 @@ export class InternalQlParser extends CstParser {
   );
 
   private isWhitespaceRequired(): boolean {
-    const wsNotRequiredBefore = [EOF, LParen, RParen, And, Or];
     const nextToken = this.LA(1);
-    return !wsNotRequiredBefore.some((t) => tokenMatcher(nextToken, t));
+    return !matchesToken(nextToken, EOF, LParen, RParen, And, Or);
   }
 
   private parenthesisExpression = this.RULE(
@@ -178,46 +176,34 @@ export class InternalQlParser extends CstParser {
 
   private rightBoundedRange = this.RULE('rightBoundedRange', () => {
     this.CONSUME(Range);
-    this.CONSUME(NonNullValue, { LABEL: 'value' });
+    this.CONSUME(AnyValue, { LABEL: 'value' });
   });
 
   private fullRange = this.RULE('fullRange', () => {
-    this.CONSUME(NonNullValue, { LABEL: 'lValue' });
+    this.CONSUME(AnyValue, { LABEL: 'lValue' });
     this.CONSUME(Range);
-    this.CONSUME1(NonNullValue, { LABEL: 'rValue' });
+    this.CONSUME1(AnyValue, { LABEL: 'rValue' });
   });
 
   private leftBoundedRange = this.RULE('leftBoundedRange', () => {
-    this.CONSUME(NonNullValue, { LABEL: 'value' });
+    this.CONSUME(AnyValue, { LABEL: 'value' });
     this.CONSUME(Range);
   });
 
   private valueExpression = this.RULE('valueExpression', () => {
-    this.OR([
-      {
-        ALT: () => {
-          this.OPTION({ DEF: () => this.CONSUME(Eq) });
-          this.CONSUME(Null);
-        },
+    this.OPTION({
+      DEF: () => {
+        this.OR([
+          { ALT: () => this.CONSUME(Eq, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Gte, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Gt, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Lte, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Lt, { LABEL: 'modifier' }) },
+          { ALT: () => this.CONSUME(Tilde, { LABEL: 'modifier' }) },
+        ]);
       },
-      {
-        ALT: () => {
-          this.OPTION1({
-            DEF: () => {
-              this.OR1([
-                { ALT: () => this.CONSUME(Gte) },
-                { ALT: () => this.CONSUME(Gt) },
-                { ALT: () => this.CONSUME(Lte) },
-                { ALT: () => this.CONSUME(Lt) },
-                { ALT: () => this.CONSUME1(Eq) },
-                { ALT: () => this.CONSUME(Tilde) },
-              ]);
-            },
-          });
-          this.CONSUME(NonNullValue, { LABEL: 'value' });
-        },
-      },
-    ]);
+    });
+    this.CONSUME(AnyValue, { LABEL: 'value' });
   });
 }
 
@@ -278,6 +264,15 @@ export function createQlParser<TKeywords extends CreateKeywordInput>(
         return {
           ast: { type: 'EMPTY' },
           errors: lexerErrors,
+        };
+      }
+      const isInputEmpty =
+        tokens.length === 0 ||
+        (tokens.length === 1 && matchesToken(tokens[0]!, Whitespace));
+      if (isInputEmpty) {
+        return {
+          ast: { type: 'EMPTY' },
+          errors: [],
         };
       }
 
