@@ -71,12 +71,14 @@ function buildExpression<TConfig extends KeywordTypes>(
 
       switch (opType) {
         case 'ILIKE': {
-          const idx = ctx.values.push(expr.op.value);
+          const value = `%${expr.op.value}%`;
+          const idx = ctx.values.push(value);
           const placeholder = `$${idx}`;
           return `"${expr.keyword}" ILIKE ${placeholder}`;
         }
         case 'LIKE': {
-          const idx = ctx.values.push(expr.op.value);
+          const value = `%${expr.op.value}%`;
+          const idx = ctx.values.push(value);
           const placeholder = `$${idx}`;
           return `"${expr.keyword}" LIKE ${placeholder}`;
         }
