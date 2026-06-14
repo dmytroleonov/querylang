@@ -63,4 +63,30 @@ describe(toSql, () => {
       parameters: ['%somevalue%', 1, '1', 1],
     });
   });
+
+  it('should correctly offset parameters', () => {
+    expect(
+      toSql<{ kw: string }>(
+        {
+          type: 'OR',
+          children: [
+            {
+              type: 'PREDICATE',
+              keyword: 'kw',
+              op: { type: 'EQ', value: 'val1' },
+            },
+            {
+              type: 'PREDICATE',
+              keyword: 'kw',
+              op: { type: 'EQ', value: 'val2' },
+            },
+          ],
+        },
+        { parameterOffset: 1 },
+      ),
+    ).toStrictEqual({
+      sql: '("kw" = $2 OR "kw" = $3)',
+      parameters: ['val1', 'val2'],
+    });
+  });
 });
