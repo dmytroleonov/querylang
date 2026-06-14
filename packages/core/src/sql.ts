@@ -73,47 +73,47 @@ function buildExpression<TConfig extends KeywordTypes>(
         case 'ILIKE': {
           const idx = ctx.values.push(expr.op.value);
           const placeholder = `$${idx}`;
-          return `${expr.keyword} ILIKE ${placeholder}`;
+          return `"${expr.keyword}" ILIKE ${placeholder}`;
         }
         case 'LIKE': {
           const idx = ctx.values.push(expr.op.value);
           const placeholder = `$${idx}`;
-          return `${expr.keyword} LIKE ${placeholder}`;
+          return `"${expr.keyword}" LIKE ${placeholder}`;
         }
         case 'BETWEEN': {
           const lIdx = ctx.values.push(expr.op.min);
           const rIdx = ctx.values.push(expr.op.max);
           const lPlaceholder = `$${lIdx}`;
           const rPlaceholder = `$${rIdx}`;
-          return `${expr.keyword} BETWEEN ${lPlaceholder} AND ${rPlaceholder}`;
+          return `"${expr.keyword}" BETWEEN ${lPlaceholder} AND ${rPlaceholder}`;
         }
         case 'EQ': {
           const idx = ctx.values.push(expr.op.value);
           const placeholder = `$${idx}`;
-          return `${expr.keyword} = ${placeholder}`;
+          return `"${expr.keyword}" = ${placeholder}`;
         }
         case 'LT': {
           const idx = ctx.values.push(expr.op.value);
           const placeholder = `$${idx}`;
-          return `${expr.keyword} < ${placeholder}`;
+          return `"${expr.keyword}" < ${placeholder}`;
         }
         case 'LTE': {
           const idx = ctx.values.push(expr.op.value);
           const placeholder = `$${idx}`;
-          return `${expr.keyword} <= ${placeholder}`;
+          return `"${expr.keyword}" <= ${placeholder}`;
         }
         case 'GT': {
           const idx = ctx.values.push(expr.op.value);
           const placeholder = `$${idx}`;
-          return `${expr.keyword} > ${placeholder}`;
+          return `"${expr.keyword}" > ${placeholder}`;
         }
         case 'GTE': {
           const idx = ctx.values.push(expr.op.value);
           const placeholder = `$${idx}`;
-          return `${expr.keyword} >= ${placeholder}`;
+          return `"${expr.keyword}" >= ${placeholder}`;
         }
         case 'IS_NULL': {
-          return `${expr.keyword} IS NULL`;
+          return `"${expr.keyword}" IS NULL`;
         }
         default: {
           throw new QueryLangException(
