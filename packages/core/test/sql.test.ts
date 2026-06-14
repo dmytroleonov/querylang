@@ -5,7 +5,7 @@ describe(toSql, () => {
   it('should build a valid SQL', () => {
     expect(toSql({ type: 'EMPTY' })).toStrictEqual({
       sql: '1=1',
-      values: [],
+      parameters: [],
     });
 
     expect(
@@ -16,7 +16,7 @@ describe(toSql, () => {
       }),
     ).toStrictEqual({
       sql: '"asdf" LIKE $1',
-      values: ['%somevalue%'],
+      parameters: ['%somevalue%'],
     });
 
     expect(
@@ -60,7 +60,7 @@ describe(toSql, () => {
       }),
     ).toStrictEqual({
       sql: '"asdf" LIKE $1 AND NOT "otherkw" = $2 AND ("otherkw2" = $3 OR "otherkw3" = $4)',
-      values: ['%somevalue%', 1, '1', 1],
+      parameters: ['%somevalue%', 1, '1', 1],
     });
   });
 });

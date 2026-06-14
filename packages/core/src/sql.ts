@@ -3,11 +3,11 @@ import { QueryLangException } from './erorr.js';
 
 export type ToSqlResult = {
   sql: string;
-  values: unknown[];
+  parameters: unknown[];
 };
 
 type SqlCtx = {
-  values: unknown[];
+  parameters: unknown[];
 };
 
 export function toSql<TConfig extends KeywordTypes>(
@@ -16,16 +16,16 @@ export function toSql<TConfig extends KeywordTypes>(
   if (ast.type === 'EMPTY') {
     return {
       sql: '1=1',
-      values: [],
+      parameters: [],
     };
   }
-  const ctx: SqlCtx = { values: [] };
+  const ctx: SqlCtx = { parameters: [] };
 
   const sql = buildExpression(ast, ctx);
 
   return {
     sql,
-    values: ctx.values,
+    parameters: ctx.parameters,
   };
 }
 
@@ -72,45 +72,45 @@ function buildExpression<TConfig extends KeywordTypes>(
       switch (opType) {
         case 'ILIKE': {
           const value = `%${expr.op.value}%`;
-          const idx = ctx.values.push(value);
+          const idx = ctx.parameters.push(value);
           const placeholder = `$${idx}`;
           return `"${expr.keyword}" ILIKE ${placeholder}`;
         }
         case 'LIKE': {
           const value = `%${expr.op.value}%`;
-          const idx = ctx.values.push(value);
+          const idx = ctx.parameters.push(value);
           const placeholder = `$${idx}`;
           return `"${expr.keyword}" LIKE ${placeholder}`;
         }
         case 'BETWEEN': {
-          const lIdx = ctx.values.push(expr.op.min);
-          const rIdx = ctx.values.push(expr.op.max);
+          const lIdx = ctx.parameters.push(expr.op.min);
+          const rIdx = ctx.parameters.push(expr.op.max);
           const lPlaceholder = `$${lIdx}`;
           const rPlaceholder = `$${rIdx}`;
           return `"${expr.keyword}" BETWEEN ${lPlaceholder} AND ${rPlaceholder}`;
         }
         case 'EQ': {
-          const idx = ctx.values.push(expr.op.value);
+          const idx = ctx.parameters.push(expr.op.value);
           const placeholder = `$${idx}`;
           return `"${expr.keyword}" = ${placeholder}`;
         }
         case 'LT': {
-          const idx = ctx.values.push(expr.op.value);
+          const idx = ctx.parameters.push(expr.op.value);
           const placeholder = `$${idx}`;
           return `"${expr.keyword}" < ${placeholder}`;
         }
         case 'LTE': {
-          const idx = ctx.values.push(expr.op.value);
+          const idx = ctx.parameters.push(expr.op.value);
           const placeholder = `$${idx}`;
           return `"${expr.keyword}" <= ${placeholder}`;
         }
         case 'GT': {
-          const idx = ctx.values.push(expr.op.value);
+          const idx = ctx.parameters.push(expr.op.value);
           const placeholder = `$${idx}`;
           return `"${expr.keyword}" > ${placeholder}`;
         }
         case 'GTE': {
-          const idx = ctx.values.push(expr.op.value);
+          const idx = ctx.parameters.push(expr.op.value);
           const placeholder = `$${idx}`;
           return `"${expr.keyword}" >= ${placeholder}`;
         }
