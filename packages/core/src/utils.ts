@@ -98,7 +98,7 @@ export function isValidTokenWithModifier(
   valueToken: IQueryLangToken,
   modifierToken?: IQueryLangToken,
 ): ModiferValidationResult {
-  if (!modifierToken || type === 'string') {
+  if (type === 'string') {
     const isStringToken = matchesToken(valueToken, StringValue);
     if (!isStringToken) {
       return {
@@ -134,6 +134,15 @@ export function isValidTokenWithModifier(
         endColumn: valueToken.endColumn,
       });
     }
+
+    if (!modifierToken) {
+      if (errors.length === 0) {
+        return { ok: true };
+      } else {
+        return { ok: false, errors };
+      }
+    }
+
     const isValid = matchesToken(modifierToken, Eq, Lt, Lte, Gt, Gte);
     if (!isValid) {
       errors.push({
@@ -167,6 +176,15 @@ export function isValidTokenWithModifier(
         endColumn: valueToken.endColumn,
       });
     }
+
+    if (!modifierToken) {
+      if (errors.length === 0) {
+        return { ok: true };
+      } else {
+        return { ok: false, errors };
+      }
+    }
+
     const isValid = matchesToken(modifierToken, Eq);
     if (isValid) {
       errors.push({
