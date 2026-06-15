@@ -1,5 +1,6 @@
 import { type IToken, type TokenType, tokenMatcher } from 'chevrotain';
 import {
+  BooleanValue,
   Eq,
   Gt,
   Gte,
@@ -164,7 +165,7 @@ export function isValidTokenWithModifier(
 
   if (type === 'boolean') {
     const errors: QueryLangError[] = [];
-    const isBooleanToken = matchesToken(valueToken, NumberValue);
+    const isBooleanToken = matchesToken(valueToken, BooleanValue);
     if (!isBooleanToken) {
       errors.push({
         message: expectedBooleanMessage(valueToken.image),
