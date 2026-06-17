@@ -1,8 +1,13 @@
 import type { Ast, Expression, KeywordTypes } from '@/types.js';
 import { QueryLangException } from './erorr.js';
 
-export type ToSqlConfig = {
+export type FieldOverrides<TConfig extends KeywordTypes> = {
+  [K in keyof TConfig]?: string;
+};
+
+export type ToSqlConfig<TConfig extends KeywordTypes> = {
   parameterOffset: number;
+  fieldOverrides?: FieldOverrides<TConfig>;
 };
 
 export type ToSqlResult = {
@@ -10,16 +15,17 @@ export type ToSqlResult = {
   parameters: unknown[];
 };
 
-type SqlCtx = {
+type SqlCtx<TConfig extends KeywordTypes> = {
   parameterOffset: number;
+  fieldOverrides: FieldOverrides<TConfig>;
   parameters: unknown[];
 };
 
 export function toSql<TConfig extends KeywordTypes>(
   ast: Ast<TConfig>,
-  config: ToSqlConfig = { parameterOffset: 0 },
+  config?: ToSqlConfig<TConfig>,
 ): ToSqlResult {
-  const { parameterOffset } = config;
+  const { parameterOffset = 0, fieldOverrides = {} } = config ?? {};
 
   if (ast.type === 'EMPTY') {
     return {
@@ -27,7 +33,11 @@ export function toSql<TConfig extends KeywordTypes>(
       parameters: [],
     };
   }
-  const ctx: SqlCtx = { parameters: [], parameterOffset };
+  const ctx: SqlCtx<TConfig> = {
+    parameters: [],
+    parameterOffset,
+    fieldOverrides,
+  };
 
   const sql = buildExpression(ast, ctx);
 
@@ -39,7 +49,7 @@ export function toSql<TConfig extends KeywordTypes>(
 
 function buildExpression<TConfig extends KeywordTypes>(
   expr: Expression<TConfig>,
-  ctx: SqlCtx,
+  ctx: SqlCtx<TConfig>,
 ): string {
   const exprType = expr.type;
 
@@ -76,54 +86,55 @@ function buildExpression<TConfig extends KeywordTypes>(
 
     case 'PREDICATE': {
       const opType = expr.op.type;
+      const field = ctx.fieldOverrides[expr.keyword] ?? `"${expr.keyword}"`;
 
       switch (opType) {
         case 'ILIKE': {
           const value = `%${expr.op.value}%`;
           const idx = ctx.parameters.push(value) + ctx.parameterOffset;
           const placeholder = `$${idx}`;
-          return `"${expr.keyword}" ILIKE ${placeholder}`;
+          return `${field} ILIKE ${placeholder}`;
         }
         case 'LIKE': {
           const value = `%${expr.op.value}%`;
           const idx = ctx.parameters.push(value) + ctx.parameterOffset;
           const placeholder = `$${idx}`;
-          return `"${expr.keyword}" LIKE ${placeholder}`;
+          return `${field} LIKE ${placeholder}`;
         }
         case 'BETWEEN': {
           const lIdx = ctx.parameters.push(expr.op.min) + ctx.parameterOffset;
           const rIdx = ctx.parameters.push(expr.op.max) + ctx.parameterOffset;
           const lPlaceholder = `$${lIdx}`;
           const rPlaceholder = `$${rIdx}`;
-          return `"${expr.keyword}" BETWEEN ${lPlaceholder} AND ${rPlaceholder}`;
+          return `${field} BETWEEN ${lPlaceholder} AND ${rPlaceholder}`;
         }
         case 'EQ': {
           const idx = ctx.parameters.push(expr.op.value) + ctx.parameterOffset;
           const placeholder = `$${idx}`;
-          return `"${expr.keyword}" = ${placeholder}`;
+          return `${field} = ${placeholder}`;
         }
         case 'LT': {
           const idx = ctx.parameters.push(expr.op.value) + ctx.parameterOffset;
           const placeholder = `$${idx}`;
-          return `"${expr.keyword}" < ${placeholder}`;
+          return `${field} < ${placeholder}`;
         }
         case 'LTE': {
           const idx = ctx.parameters.push(expr.op.value) + ctx.parameterOffset;
           const placeholder = `$${idx}`;
-          return `"${expr.keyword}" <= ${placeholder}`;
+          return `${field} <= ${placeholder}`;
         }
         case 'GT': {
           const idx = ctx.parameters.push(expr.op.value) + ctx.parameterOffset;
           const placeholder = `$${idx}`;
-          return `"${expr.keyword}" > ${placeholder}`;
+          return `${field} > ${placeholder}`;
         }
         case 'GTE': {
           const idx = ctx.parameters.push(expr.op.value) + ctx.parameterOffset;
           const placeholder = `$${idx}`;
-          return `"${expr.keyword}" >= ${placeholder}`;
+          return `${field} >= ${placeholder}`;
         }
         case 'IS_NULL': {
-          return `"${expr.keyword}" IS NULL`;
+          return `${field} IS NULL`;
         }
         default: {
           throw new QueryLangException(
