@@ -89,4 +89,16 @@ describe(toSql, () => {
       parameters: ['val1', 'val2'],
     });
   });
+
+  it('should override fields', () => {
+    expect(
+      toSql<{ kw: number }>(
+        { type: 'PREDICATE', keyword: 'kw', op: { type: 'EQ', value: 1 } },
+        { fieldOverrides: { kw: '"nested"."kw"' } },
+      ),
+    ).toStrictEqual({
+      sql: '"nested"."kw" = $1',
+      parameters: [1],
+    });
+  });
 });
