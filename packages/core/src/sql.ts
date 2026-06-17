@@ -6,7 +6,7 @@ export type FieldOverrides<TConfig extends KeywordTypes> = {
 };
 
 export type ToSqlConfig<TConfig extends KeywordTypes> = {
-  parameterOffset: number;
+  parameterOffset?: number;
   fieldOverrides?: FieldOverrides<TConfig>;
 };
 
