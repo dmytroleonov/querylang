@@ -12,6 +12,7 @@
       "persistent": true,
       "interactive": true
     },
+    "bundle": {},
     "//#lint": {},
     "//#lint:fix": {
       "cache": false
