@@ -90,6 +90,10 @@ export function createChevrotainCstVisitor<
       this.errors.push(...errors);
     }
 
+    public reset(): void {
+      this.errors = [];
+    }
+
     public getErrors(): QueryLangError[] {
       return structuredClone(this.errors);
     }
@@ -621,6 +625,7 @@ Wrap it in single or double quotes to perform a string lookup',
 
   return {
     visit: (node) => {
+      cstVisitor.reset();
       const ast = cstVisitor.visit(node);
       const errors = cstVisitor.getErrors();
       if (errors.length) {
