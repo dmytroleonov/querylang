@@ -86,4 +86,16 @@ describe(createChevrotainLexer, () => {
       { tokenType: { name: 'rParen' }, image: ')' },
     ]);
   });
+
+  it('should correctly parse modifiers after the keyword', () => {
+    const language = createLanguage({ kw: { type: 'number' } });
+    const lexer = createChevrotainLexer(language.tokens);
+    const res = lexer.tokenize('kw>0');
+    expect(res.errors).toHaveLength(0);
+    expect(res.tokens).toMatchObject([
+      { tokenType: { name: 'kw' }, image: 'kw' },
+      { tokenType: { name: 'gt' }, image: '>' },
+      { tokenType: { name: 'number' }, image: '0' },
+    ]);
+  });
 });
