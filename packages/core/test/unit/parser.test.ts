@@ -12,6 +12,6 @@ describe(createChevrotainParser, () => {
       ' (asdf1..& ..123 &asdf..asdf2 & ..asdf3 |kw:1| kw:null) & ( kw:!( !asdf & asdf ) ) & asdf !=null ',
     );
     const res = parser.parse(tokens);
-    expect(res.errors).toHaveLength(0);
+    expect(res.errors).toStrictEqual([])
   });
 });
