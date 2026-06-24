@@ -1,6 +1,7 @@
 import {
   type CstNode,
   CstParser,
+  EOF,
   type IRecognitionException,
   type IToken,
   type TokenType,
@@ -32,6 +33,7 @@ import type {
   QueryLangError,
 } from '@/types.js';
 import { matchesToken } from '@/utils.js';
+import { QueryLangException } from './erorr.js';
 
 export type ChevrotainParserResult = {
   node: CstNode;
@@ -87,15 +89,18 @@ export class InternalQlParser extends CstParser {
       this.OPTION(() => {
         this.CONSUME(Whitespace);
       });
-      this.OR([
-        {
-          GATE: () => !!config?.isGlobal,
-          ALT: () => this.SUBRULE(this.keywordExpression),
-        },
-        {
-          ALT: () => this.SUBRULE(this.atomicExpression, { ARGS: [config] }),
-        },
-      ]);
+      this.OR({
+        DEF: [
+          {
+            GATE: () => !!config?.isGlobal,
+            ALT: () => this.SUBRULE(this.keywordExpression),
+          },
+          {
+            ALT: () => this.SUBRULE(this.atomicExpression, { ARGS: [config] }),
+          },
+        ],
+        ERR_MSG: config?.isGlobal ? 'keyword or expression' : 'expression',
+      });
     },
   );
 
@@ -104,7 +109,7 @@ export class InternalQlParser extends CstParser {
     this.OPTION1(() => this.CONSUME(Whitespace));
     this.CONSUME(Keyword);
     this.OPTION2(() => this.CONSUME1(Whitespace));
-    this.CONSUME(Colon);
+    this.CONSUME(Colon, { ERR_MSG: 'Expected colon after a keyword' });
     this.OPTION3(() => this.CONSUME2(Whitespace));
     this.SUBRULE(this.atomicExpression, { ARGS: [{ isGlobal: false }] });
   });
@@ -114,24 +119,27 @@ export class InternalQlParser extends CstParser {
     (config?: ParsingStepConfig) => {
       this.OPTION(() => this.CONSUME(Not));
       this.OPTION1(() => this.CONSUME(Whitespace));
-      this.OR([
-        {
-          ALT: () =>
-            this.SUBRULE(this.parenthesisExpression, {
-              ARGS: [config],
-            }),
-        },
-        {
-          GATE: () =>
-            this.LA(1).tokenType === Range || this.LA(2).tokenType === Range,
-          ALT: () => this.SUBRULE(this.rangeExpression),
-        },
-        {
-          ALT: () => {
-            this.SUBRULE(this.valueExpression);
+      this.OR({
+        DEF: [
+          {
+            ALT: () =>
+              this.SUBRULE(this.parenthesisExpression, {
+                ARGS: [config],
+              }),
           },
-        },
-      ]);
+          {
+            GATE: () =>
+              this.LA(1).tokenType === Range || this.LA(2).tokenType === Range,
+            ALT: () => this.SUBRULE(this.rangeExpression),
+          },
+          {
+            ALT: () => {
+              this.SUBRULE(this.valueExpression);
+            },
+          },
+        ],
+        ERR_MSG: "'(', range expression, or value with modifier",
+      });
       this.OPTION2(() => this.CONSUME1(Whitespace));
     },
   );
@@ -191,9 +199,14 @@ export function createChevrotainParser(tokens: TokenType[]): ChevrotainParser {
   return {
     instance: parser,
     parse: (input) => {
+      const lastToken = input.at(-1);
+      if (!lastToken) {
+        throw new QueryLangException('Unreachable');
+      }
+      const errorTransformer = getParsingErrorTransformer(lastToken);
       parser.input = input;
       const node = parser.orExpression();
-      const errors = parser.errors.map(parsingErrorToQueryLangError);
+      const errors = parser.errors.map(errorTransformer);
 
       return { node, errors };
     },
@@ -209,18 +222,37 @@ export type QlParser<TKeywords extends CreateKeywordInput> = {
   parse: (input: string) => ParserResult<TKeywords>;
 };
 
-function parsingErrorToQueryLangError(
-  error: IRecognitionException,
-): QueryLangError {
-  const { token } = error;
-  return {
-    message: `unexpected token ->${token.image}<-`,
-    startOffset: token.startOffset,
-    startLine: token.startLine!,
-    startColumn: token.startColumn!,
-    endOffset: token.endOffset!,
-    endLine: token.endLine!,
-    endColumn: token.endColumn!,
+function getParsingErrorTransformer(
+  lastToken: IToken,
+): (error: IRecognitionException) => QueryLangError {
+  return (error: IRecognitionException): QueryLangError => {
+    const { token } = error;
+    let cleanedMessage = error.message;
+    if (error.message.startsWith('Expecting: ')) {
+      cleanedMessage = cleanedMessage.replace(':', '').replace('\n', ', ');
+    }
+
+    if (matchesToken(token, EOF)) {
+      return {
+        message: cleanedMessage,
+        startOffset: lastToken.startOffset,
+        startLine: lastToken.startLine!,
+        startColumn: lastToken.startColumn!,
+        endOffset: lastToken.endOffset!,
+        endLine: lastToken.endLine!,
+        endColumn: lastToken.endColumn!,
+      };
+    }
+
+    return {
+      message: cleanedMessage,
+      startOffset: token.startOffset,
+      startLine: token.startLine!,
+      startColumn: token.startColumn!,
+      endOffset: token.endOffset!,
+      endLine: token.endLine!,
+      endColumn: token.endColumn!,
+    };
   };
 }
 
